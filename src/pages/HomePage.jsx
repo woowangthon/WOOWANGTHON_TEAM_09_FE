@@ -3,11 +3,9 @@ import { Link } from 'react-router'
 
 function loadWorkoutRecord() {
   try {
-    const saved = localStorage.getItem('demo-workout-record')
-
-    if (!saved) return null
-
-    const record = JSON.parse(saved)
+    const record = JSON.parse(
+      localStorage.getItem('demo-workout-record')
+    )
 
     if (
       record?.planId !== 'demo-plan-1' ||
@@ -28,13 +26,42 @@ function loadWorkoutRecord() {
   }
 }
 
+function loadApprovedPlan() {
+  try {
+    const plan = JSON.parse(
+      localStorage.getItem('demo-approved-plan')
+    )
+
+    if (
+      plan?.id !== 'demo-weekly-plan-1' ||
+      typeof plan.approvedAt !== 'string' ||
+      !Array.isArray(plan.sessions) ||
+      plan.sessions.length === 0 ||
+      !plan.sessions.every(
+        (session) =>
+          session &&
+          typeof session.id === 'string' &&
+          typeof session.day === 'string' &&
+          typeof session.time === 'string' &&
+          typeof session.title === 'string' &&
+          Number.isFinite(session.duration) &&
+          session.duration > 0
+      )
+    ) {
+      return null
+    }
+
+    return plan
+  } catch {
+    return null
+  }
+}
+
 function loadUpcomingSchedules() {
   try {
-    const saved = localStorage.getItem('demo-schedules')
-
-    if (!saved) return []
-
-    const schedules = JSON.parse(saved)
+    const schedules = JSON.parse(
+      localStorage.getItem('demo-schedules')
+    )
 
     if (!Array.isArray(schedules)) return []
 
@@ -66,6 +93,7 @@ function loadUpcomingSchedules() {
 
 export default function HomePage() {
   const [record] = useState(loadWorkoutRecord)
+  const [plan] = useState(loadApprovedPlan)
   const [schedules, setSchedules] = useState(loadUpcomingSchedules)
 
   const completedCount = record
@@ -89,9 +117,12 @@ export default function HomePage() {
       ? savedDate.toLocaleString('ko-KR')
       : '저장 시각 정보 없음'
 
-  function refreshSchedules() {
-    setSchedules(loadUpcomingSchedules())
-  }
+  const totalMinutes = plan
+    ? plan.sessions.reduce(
+        (total, session) => total + session.duration,
+        0
+      )
+    : 0
 
   return (
     <section>
@@ -99,8 +130,39 @@ export default function HomePage() {
       <p>내 일정에 맞는 운동을 시작해 보세요.</p>
 
       <section>
+        <h2>승인한 운동 계획</h2>
+
+        {plan ? (
+          <div>
+            <p>
+              주 {plan.sessions.length}회 · 총 {totalMinutes}분
+            </p>
+
+            <ul>
+              {plan.sessions.map((session) => (
+                <li key={session.id}>
+                  <strong>{session.day} · {session.title}</strong>
+                  <p>
+                    {session.time} 시작 · {session.duration}분
+                  </p>
+                </li>
+              ))}
+            </ul>
+
+            <p>현재는 예시 주간 계획입니다.</p>
+            <Link to="/plan">계획 자세히 보기</Link>
+          </div>
+        ) : (
+          <div>
+            <p>아직 승인한 운동 계획이 없어요.</p>
+            <Link to="/plan">운동 계획 확인하기</Link>
+          </div>
+        )}
+      </section>
+
+      <section>
         <h2>운동하기</h2>
-        <p>운동 목록을 확인하고 수행한 종목을 체크하세요.</p>
+        <p>예시 운동 목록을 확인하고 수행한 종목을 체크하세요.</p>
         <Link to="/workout">운동 화면으로 이동</Link>
       </section>
 
@@ -126,7 +188,10 @@ export default function HomePage() {
         <h2>다가오는 생활 일정</h2>
         <p>아직 끝나지 않은 일정을 시간순으로 최대 3개 표시해요.</p>
 
-        <button type="button" onClick={refreshSchedules}>
+        <button
+          type="button"
+          onClick={() => setSchedules(loadUpcomingSchedules())}
+        >
           저장된 일정 다시 불러오기
         </button>
 
