@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router'
 
 const initialProfile = {
   goal: '',
@@ -9,9 +10,43 @@ const initialProfile = {
   age: '',
 }
 
+function loadProfile() {
+  try {
+    const saved = localStorage.getItem('demo-profile')
+
+    if (!saved) return initialProfile
+
+    const profile = JSON.parse(saved)
+
+    if (!profile || typeof profile !== 'object') {
+      return initialProfile
+    }
+
+    return {
+      goal: ['muscle', 'fat', 'fitness', 'general'].includes(profile.goal)
+        ? profile.goal
+        : '',
+      experience: ['beginner', 'intermediate', 'advanced'].includes(
+        profile.experience
+      )
+        ? profile.experience
+        : '',
+      environment: ['campus', 'gym', 'planned'].includes(profile.environment)
+        ? profile.environment
+        : '',
+      height: Number.isFinite(profile.height) ? String(profile.height) : '',
+      weight: Number.isFinite(profile.weight) ? String(profile.weight) : '',
+      age: Number.isInteger(profile.age) ? String(profile.age) : '',
+    }
+  } catch {
+    return initialProfile
+  }
+}
+
 export default function SignupPage() {
-  const [profile, setProfile] = useState(initialProfile)
+  const [profile, setProfile] = useState(loadProfile)
   const [message, setMessage] = useState('')
+  const navigate = useNavigate()
 
   function handleChange(event) {
     const { name, value } = event.target
@@ -39,16 +74,17 @@ export default function SignupPage() {
         'demo-profile',
         JSON.stringify(savedProfile)
       )
-
-      setMessage('초기 정보를 브라우저에 저장했어요.')
     } catch {
       setMessage('저장하지 못했어요. 다시 시도해 주세요.')
+      return
     }
+
+    navigate('/profile')
   }
 
   return (
     <section>
-      <h1>초기 정보 입력</h1>
+      <h1>초기 정보 입력 및 수정</h1>
       <p>운동 계획에 사용할 정보를 입력해 주세요.</p>
 
       <form onSubmit={handleSubmit}>
@@ -152,7 +188,7 @@ export default function SignupPage() {
           </label>
         </p>
 
-        <button type="submit">초기 정보 저장</button>
+        <button type="submit">저장하고 프로필 보기</button>
       </form>
 
       <p role="status">{message}</p>
