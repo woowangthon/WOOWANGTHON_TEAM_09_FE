@@ -1,128 +1,147 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
 
-function loadWorkoutRecord() {
+function readStorage(key, fallback) {
   try {
-    const record = JSON.parse(
-      localStorage.getItem('demo-workout-record')
-    )
-
-    if (
-      record?.planId !== 'demo-plan-1' ||
-      !Array.isArray(record.exercises) ||
-      record.exercises.length === 0 ||
-      !record.exercises.every(
-        (exercise) =>
-          exercise &&
-          typeof exercise.completed === 'boolean'
-      )
-    ) {
-      return null
-    }
-
-    return record
+    const saved = localStorage.getItem(key)
+    return saved ? JSON.parse(saved) : fallback
   } catch {
-    return null
+    return fallback
   }
 }
 
-function loadApprovedPlan() {
-  try {
-    const plan = JSON.parse(
-      localStorage.getItem('demo-approved-plan')
+function loadPlan() {
+  const plan = readStorage('demo-approved-plan', null)
+
+  if (
+    plan?.id !== 'demo-weekly-plan-1' ||
+    !Array.isArray(plan.sessions) ||
+    plan.sessions.length === 0 ||
+    !plan.sessions.every(
+      (session) =>
+        session &&
+        typeof session.id === 'string' &&
+        typeof session.day === 'string' &&
+        typeof session.title === 'string' &&
+        typeof session.time === 'string' &&
+        Number.isFinite(session.duration) &&
+        session.duration > 0
     )
-
-    if (
-      plan?.id !== 'demo-weekly-plan-1' ||
-      typeof plan.approvedAt !== 'string' ||
-      !Array.isArray(plan.sessions) ||
-      plan.sessions.length === 0 ||
-      !plan.sessions.every(
-        (session) =>
-          session &&
-          typeof session.id === 'string' &&
-          typeof session.day === 'string' &&
-          typeof session.time === 'string' &&
-          typeof session.title === 'string' &&
-          Number.isFinite(session.duration) &&
-          session.duration > 0
-      )
-    ) {
-      return null
-    }
-
-    return plan
-  } catch {
+  ) {
     return null
   }
+
+  return plan
+}
+
+function loadRecords() {
+  const records = readStorage('demo-session-records', {})
+
+  return records && typeof records === 'object' && !Array.isArray(records)
+    ? records
+    : {}
+}
+
+function getValidRecord(records, planId, sessionId) {
+  const record = records[`${planId}:${sessionId}`]
+
+  if (
+    record?.planId !== planId ||
+    record.sessionId !== sessionId ||
+    !Array.isArray(record.exercises) ||
+    record.exercises.length === 0 ||
+    !record.exercises.every(
+      (exercise) =>
+        exercise && typeof exercise.completed === 'boolean'
+    ) ||
+    typeof record.savedAt !== 'string' ||
+    Number.isNaN(new Date(record.savedAt).getTime())
+  ) {
+    return null
+  }
+
+  return record
+}
+
+function getStatus(record) {
+  if (!record) return '기록 없음'
+
+  const count = record.exercises.filter(
+    (exercise) => exercise.completed
+  ).length
+
+  if (count === record.exercises.length) return '완료'
+  if (count > 0) return '부분 완료'
+  return '미수행'
 }
 
 function loadUpcomingSchedules() {
-  try {
-    const schedules = JSON.parse(
-      localStorage.getItem('demo-schedules')
+  const schedules = readStorage('demo-schedules', [])
+
+  if (!Array.isArray(schedules)) return []
+
+  return schedules
+    .filter(
+      (schedule) =>
+        schedule &&
+        typeof schedule.id === 'string' &&
+        typeof schedule.title === 'string' &&
+        typeof schedule.date === 'string' &&
+        typeof schedule.startTime === 'string' &&
+        typeof schedule.endTime === 'string' &&
+        new Date(
+          `${schedule.date}T${schedule.endTime}`
+        ).getTime() > Date.now()
     )
-
-    if (!Array.isArray(schedules)) return []
-
-    const now = Date.now()
-
-    return schedules
-      .filter(
-        (schedule) =>
-          schedule &&
-          typeof schedule.id === 'string' &&
-          typeof schedule.title === 'string' &&
-          typeof schedule.date === 'string' &&
-          typeof schedule.startTime === 'string' &&
-          typeof schedule.endTime === 'string' &&
-          new Date(
-            `${schedule.date}T${schedule.endTime}`
-          ).getTime() > now
+    .sort((a, b) =>
+      `${a.date}T${a.startTime}`.localeCompare(
+        `${b.date}T${b.startTime}`
       )
-      .sort((a, b) =>
-        `${a.date}T${a.startTime}`.localeCompare(
-          `${b.date}T${b.startTime}`
-        )
-      )
-      .slice(0, 3)
-  } catch {
-    return []
-  }
+    )
+    .slice(0, 3)
 }
 
 export default function HomePage() {
-  const [record] = useState(loadWorkoutRecord)
-  const [plan] = useState(loadApprovedPlan)
+  const [plan] = useState(loadPlan)
+  const [records] = useState(loadRecords)
   const [schedules, setSchedules] = useState(loadUpcomingSchedules)
 
-  const completedCount = record
-    ? record.exercises.filter((exercise) => exercise.completed).length
+  const sessions = plan
+    ? plan.sessions.map((session) => {
+        const record = getValidRecord(records, plan.id, session.id)
+
+        return {
+          ...session,
+          record,
+          status: getStatus(record),
+        }
+      })
+    : []
+
+  const completedSessions = sessions.filter(
+    (session) => session.status === '완료'
+  ).length
+
+  const partialSessions = sessions.filter(
+    (session) => session.status === '부분 완료'
+  ).length
+
+  const completionRate = sessions.length
+    ? Math.round((completedSessions / sessions.length) * 100)
     : 0
 
-  const totalCount = record ? record.exercises.length : 0
+  const totalMinutes = sessions.reduce(
+    (total, session) => total + session.duration,
+    0
+  )
 
-  const status = !record
-    ? '기록 없음'
-    : completedCount === totalCount
-      ? '완료'
-      : completedCount > 0
-        ? '부분 완료'
-        : '미수행'
-
-  const savedDate = record ? new Date(record.savedAt) : null
-
-  const savedDateText =
-    savedDate && !Number.isNaN(savedDate.getTime())
-      ? savedDate.toLocaleString('ko-KR')
-      : '저장 시각 정보 없음'
-
-  const totalMinutes = plan
-    ? plan.sessions.reduce(
-        (total, session) => total + session.duration,
-        0
-      )
-    : 0
+  const latestSession = sessions
+    .filter((session) => session.record)
+    .sort(
+      (a, b) =>
+        new Date(b.record.savedAt).getTime() -
+        new Date(a.record.savedAt).getTime()
+    )[0]
 
   return (
     <section>
@@ -134,22 +153,20 @@ export default function HomePage() {
 
         {plan ? (
           <div>
-            <p>
-              주 {plan.sessions.length}회 · 총 {totalMinutes}분
-            </p>
+            <p>주 {sessions.length}회 · 총 {totalMinutes}분</p>
 
             <ul>
-              {plan.sessions.map((session) => (
+              {sessions.map((session) => (
                 <li key={session.id}>
-                  <strong>{session.day} · {session.title}</strong>
+                  <h3>{session.day} · {session.title}</h3>
                   <p>
                     {session.time} 시작 · {session.duration}분
                   </p>
+                  <p>상태: {session.status}</p>
                 </li>
               ))}
             </ul>
 
-            <p>현재는 예시 주간 계획입니다.</p>
             <Link to="/plan">계획 자세히 보기</Link>
           </div>
         ) : (
@@ -160,33 +177,50 @@ export default function HomePage() {
         )}
       </section>
 
+      {plan && (
+        <section>
+          <h2>예시 계획 진행 현황</h2>
+          <p>전체 완료: {completedSessions} / {sessions.length}회</p>
+          <p>부분 완료: {partialSessions}회</p>
+          <p>계획 수행률: {completionRate}%</p>
+          <p>부분 완료는 전체 완료 횟수에 포함하지 않아요.</p>
+        </section>
+      )}
+
       <section>
         <h2>운동하기</h2>
-        <p>예시 운동 목록을 확인하고 수행한 종목을 체크하세요.</p>
-        <Link to="/workout">운동 화면으로 이동</Link>
+        <Link to="/workout">운동 선택 및 기록하기</Link>
       </section>
 
       <section>
         <h2>최근 저장한 운동 결과</h2>
 
-        {record ? (
+        {latestSession ? (
           <div>
-            <p>상태: {status}</p>
+            <h3>{latestSession.day} · {latestSession.title}</h3>
+            <p>상태: {latestSession.status}</p>
             <p>
-              완료한 종목: {completedCount} / {totalCount}개
+              완료한 종목:{' '}
+              {latestSession.record.exercises.filter(
+                (exercise) => exercise.completed
+              ).length}
+              {' / '}
+              {latestSession.record.exercises.length}개
             </p>
-            <p>저장 시각: {savedDateText}</p>
+            <p>
+              저장 시각:{' '}
+              {new Date(
+                latestSession.record.savedAt
+              ).toLocaleString('ko-KR')}
+            </p>
           </div>
         ) : (
-          <p>아직 저장된 운동 기록이 없어요.</p>
+          <p>현재 계획에 저장된 운동 기록이 없어요.</p>
         )}
-
-        <p>현재는 예시 운동 기록 하나를 표시합니다.</p>
       </section>
 
       <section>
         <h2>다가오는 생활 일정</h2>
-        <p>아직 끝나지 않은 일정을 시간순으로 최대 3개 표시해요.</p>
 
         <button
           type="button"
