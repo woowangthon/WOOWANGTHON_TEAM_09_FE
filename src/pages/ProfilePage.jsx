@@ -22,11 +22,7 @@ const environmentLabels = {
 
 function loadProfile() {
   try {
-    const saved = localStorage.getItem('demo-profile')
-
-    if (!saved) return null
-
-    const profile = JSON.parse(saved)
+    const profile = JSON.parse(localStorage.getItem('demo-profile'))
 
     if (
       !profile ||
@@ -49,18 +45,57 @@ function loadProfile() {
   }
 }
 
-function InbodyUpload() {
+function loadInbody() {
+  const empty = {
+    bodyFat: '',
+    muscleMass: '',
+    measuredAt: '',
+  }
+
+  try {
+    const data = JSON.parse(localStorage.getItem('demo-inbody'))
+
+    if (
+      !data ||
+      !Number.isFinite(data.bodyFat) ||
+      data.bodyFat <= 0 ||
+      data.bodyFat > 100 ||
+      !Number.isFinite(data.muscleMass) ||
+      data.muscleMass <= 0 ||
+      typeof data.measuredAt !== 'string' ||
+      !/^\d{4}-\d{2}-\d{2}$/.test(data.measuredAt)
+    ) {
+      return empty
+    }
+
+    return {
+      bodyFat: String(data.bodyFat),
+      muscleMass: String(data.muscleMass),
+      measuredAt: data.measuredAt,
+    }
+  } catch {
+    return empty
+  }
+}
+
+function InbodySection() {
   const [image, setImage] = useState(null)
-  const [message, setMessage] = useState('')
+  const [imageMessage, setImageMessage] = useState('')
+  const [form, setForm] = useState(loadInbody)
+  const [saveMessage, setSaveMessage] = useState('')
   const inputRef = useRef(null)
 
-  // 이미지 교체나 화면 이동 시 미리보기용 주소를 정리한다.
+  const today = new Date()
+  const todayText = [
+    today.getFullYear(),
+    String(today.getMonth() + 1).padStart(2, '0'),
+    String(today.getDate()).padStart(2, '0'),
+  ].join('-')
+
   useEffect(() => {
     if (!image) return
 
-    return () => {
-      URL.revokeObjectURL(image.url)
-    }
+    return () => URL.revokeObjectURL(image.url)
   }, [image])
 
   function handleFileChange(event) {
@@ -68,48 +103,66 @@ function InbodyUpload() {
 
     if (!file) return
 
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp']
-
-    if (!allowedTypes.includes(file.type)) {
-      setMessage('JPG, PNG, WEBP 이미지를 선택해 주세요.')
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      setImageMessage('JPG, PNG, WEBP 이미지를 선택해 주세요.')
       event.target.value = ''
       return
     }
 
     if (file.size > 10 * 1024 * 1024) {
-      setMessage('10MB 이하의 이미지를 선택해 주세요.')
+      setImageMessage('10MB 이하의 이미지를 선택해 주세요.')
       event.target.value = ''
       return
     }
 
-    setImage({
-      file,
-      url: URL.createObjectURL(file),
-    })
-
-    setMessage('')
+    setImage({ file, url: URL.createObjectURL(file) })
+    setImageMessage('')
   }
 
   function removeImage() {
     setImage(null)
-    setMessage('')
+    setImageMessage('')
 
     if (inputRef.current) {
       inputRef.current.value = ''
     }
   }
 
+  function handleChange(event) {
+    const { name, value } = event.target
+
+    setForm((previous) => ({
+      ...previous,
+      [name]: value,
+    }))
+
+    setSaveMessage('')
+  }
+
+  function saveInbody(event) {
+    event.preventDefault()
+
+    const data = {
+      bodyFat: Number(form.bodyFat),
+      muscleMass: Number(form.muscleMass),
+      measuredAt: form.measuredAt,
+      savedAt: new Date().toISOString(),
+    }
+
+    try {
+      localStorage.setItem('demo-inbody', JSON.stringify(data))
+      setSaveMessage('인바디 수치를 브라우저에 저장했어요.')
+    } catch {
+      setSaveMessage('저장하지 못했어요. 다시 시도해 주세요.')
+    }
+  }
+
   return (
     <section>
-      <h2>인바디 결과지</h2>
-
-      <p>
-        측정 수치가 잘 보이는 JPG, PNG, WEBP 이미지를 선택해 주세요.
-        최대 10MB까지 선택할 수 있어요.
-      </p>
+      <h2>인바디 정보</h2>
 
       <label>
-        인바디 이미지 선택{' '}
+        결과지 이미지 선택{' '}
         <input
           ref={inputRef}
           type="file"
@@ -118,15 +171,16 @@ function InbodyUpload() {
         />
       </label>
 
-      <p role="status">{message}</p>
+      <p>JPG, PNG, WEBP / 최대 10MB</p>
+      <p role="status">{imageMessage}</p>
 
       {image && (
         <div>
-          <p>선택한 파일: {image.file.name}</p>
+          <p>{image.file.name}</p>
 
           <img
             src={image.url}
-            alt="선택한 인바디 결과지 미리보기"
+            alt="선택한 인바디 결과지"
             style={{
               display: 'block',
               maxWidth: '100%',
@@ -135,7 +189,7 @@ function InbodyUpload() {
               margin: '16px auto',
             }}
             onError={() =>
-              setMessage('이미지를 표시할 수 없어요. 다른 파일을 선택해 주세요.')
+              setImageMessage('이미지를 표시할 수 없어요. 다른 파일을 선택해 주세요.')
             }
           />
 
@@ -144,6 +198,61 @@ function InbodyUpload() {
           </button>
         </div>
       )}
+
+      <h3>수치 직접 입력</h3>
+      <p>결과지를 보고 수치를 입력해 주세요.</p>
+
+      <form onSubmit={saveInbody}>
+        <p>
+          <label>
+            체지방률(%){' '}
+            <input
+              type="number"
+              name="bodyFat"
+              value={form.bodyFat}
+              onChange={handleChange}
+              min="0.1"
+              max="100"
+              step="0.1"
+              required
+            />
+          </label>
+        </p>
+
+        <p>
+          <label>
+            골격근량(kg){' '}
+            <input
+              type="number"
+              name="muscleMass"
+              value={form.muscleMass}
+              onChange={handleChange}
+              min="0.1"
+              step="0.1"
+              required
+            />
+          </label>
+        </p>
+
+        <p>
+          <label>
+            측정일{' '}
+            <input
+              type="date"
+              name="measuredAt"
+              value={form.measuredAt}
+              onChange={handleChange}
+              max={todayText}
+              required
+            />
+          </label>
+        </p>
+
+        <button type="submit">인바디 수치 저장</button>
+      </form>
+
+      <p role="status">{saveMessage}</p>
+      <p>입력한 수치만 저장되며, 결과지 이미지는 저장되지 않아요.</p>
     </section>
   )
 }
@@ -176,14 +285,14 @@ export default function ProfilePage() {
           <dd>{profile.age}세</dd>
         </dl>
       ) : (
-        <p>저장된 초기 정보가 없어요. 먼저 정보를 입력해 주세요.</p>
+        <p>저장된 초기 정보가 없어요.</p>
       )}
 
       <Link to="/signup">
         {profile ? '초기 정보 다시 입력하기' : '초기 정보 입력하기'}
       </Link>
 
-      <InbodyUpload />
+      <InbodySection />
     </section>
   )
 }
