@@ -28,8 +28,45 @@ function loadWorkoutRecord() {
   }
 }
 
+function loadUpcomingSchedules() {
+  try {
+    const saved = localStorage.getItem('demo-schedules')
+
+    if (!saved) return []
+
+    const schedules = JSON.parse(saved)
+
+    if (!Array.isArray(schedules)) return []
+
+    const now = Date.now()
+
+    return schedules
+      .filter(
+        (schedule) =>
+          schedule &&
+          typeof schedule.id === 'string' &&
+          typeof schedule.title === 'string' &&
+          typeof schedule.date === 'string' &&
+          typeof schedule.startTime === 'string' &&
+          typeof schedule.endTime === 'string' &&
+          new Date(
+            `${schedule.date}T${schedule.endTime}`
+          ).getTime() > now
+      )
+      .sort((a, b) =>
+        `${a.date}T${a.startTime}`.localeCompare(
+          `${b.date}T${b.startTime}`
+        )
+      )
+      .slice(0, 3)
+  } catch {
+    return []
+  }
+}
+
 export default function HomePage() {
   const [record] = useState(loadWorkoutRecord)
+  const [schedules, setSchedules] = useState(loadUpcomingSchedules)
 
   const completedCount = record
     ? record.exercises.filter((exercise) => exercise.completed).length
@@ -51,6 +88,10 @@ export default function HomePage() {
     savedDate && !Number.isNaN(savedDate.getTime())
       ? savedDate.toLocaleString('ko-KR')
       : '저장 시각 정보 없음'
+
+  function refreshSchedules() {
+    setSchedules(loadUpcomingSchedules())
+  }
 
   return (
     <section>
@@ -82,8 +123,31 @@ export default function HomePage() {
       </section>
 
       <section>
-        <h2>일정 관리</h2>
-        <Link to="/schedule">일정 화면으로 이동</Link>
+        <h2>다가오는 생활 일정</h2>
+        <p>아직 끝나지 않은 일정을 시간순으로 최대 3개 표시해요.</p>
+
+        <button type="button" onClick={refreshSchedules}>
+          저장된 일정 다시 불러오기
+        </button>
+
+        {schedules.length === 0 ? (
+          <p>예정된 생활 일정이 없어요.</p>
+        ) : (
+          <ul>
+            {schedules.map((schedule) => (
+              <li key={schedule.id}>
+                <h3>{schedule.title}</h3>
+                <p>
+                  {schedule.date}
+                  {' · '}
+                  {schedule.startTime} ~ {schedule.endTime}
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <Link to="/schedule">전체 일정 보기 및 추가</Link>
       </section>
     </section>
   )
