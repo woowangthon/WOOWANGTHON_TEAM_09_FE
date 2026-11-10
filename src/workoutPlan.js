@@ -1,3 +1,5 @@
+const APPROVED_PLAN_KEY = 'demo-approved-plan'
+
 export const weekdays = ['일', '월', '화', '수', '목', '금', '토']
 
 export function readStorage(key, fallback) {
@@ -10,7 +12,7 @@ export function readStorage(key, fallback) {
 }
 
 export function loadPlan() {
-  const plan = readStorage('demo-approved-plan', null)
+  const plan = readStorage(APPROVED_PLAN_KEY, null)
 
   if (
     plan?.id !== 'demo-weekly-plan-1' ||
@@ -31,6 +33,10 @@ export function loadPlan() {
   }
 
   return plan
+}
+
+export function savePlan(plan) {
+  localStorage.setItem(APPROVED_PLAN_KEY, JSON.stringify(plan))
 }
 
 export function loadRecords() {

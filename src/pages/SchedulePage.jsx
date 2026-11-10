@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
 import FitNavigation from '../components/FitNavigation.jsx'
-import { getStatus, getValidRecord, loadPlan, loadRecords, weekdays } from '../workoutPlan.js'
+import { getStatus, getValidRecord, loadPlan, loadRecords, savePlan, weekdays } from '../workoutPlan.js'
 import './SchedulePage.css'
 
 const STORAGE_KEY = 'demo-schedules'
@@ -70,6 +70,102 @@ function workoutForDate(plan, date) {
   return plan.sessions.find((session) => session.day === `${weekdays[date.getDay()]}요일`) ?? null
 }
 
+function timeToMinutes(time) {
+  const [hour, minute] = time.split(':').map(Number)
+  return hour * 60 + minute
+}
+
+function minutesToTime(minutes) {
+  const hour = String(Math.floor(minutes / 60)).padStart(2, '0')
+  const minute = String(minutes % 60).padStart(2, '0')
+  return `${hour}:${minute}`
+}
+
+function overlaps(start, end, busy) {
+  return start < busy.end && end > busy.start
+}
+
+function getChangeOptions(plan, workout, selectedKey, daySchedules, now) {
+  const start = timeToMinutes(workout.time)
+  const busy = daySchedules.map((schedule) => ({
+    start: timeToMinutes(schedule.startTime),
+    end: timeToMinutes(schedule.endTime),
+  }))
+
+  for (const session of plan.sessions) {
+    if (session.id === workout.id || session.day !== workout.day) continue
+    const sessionStart = timeToMinutes(session.time)
+    busy.push({ start: sessionStart, end: sessionStart + session.duration })
+  }
+
+  const options = []
+
+  // 09:00~22:00 사이를 30분 간격으로 검사한다.
+  for (let time = 9 * 60; time + workout.duration <= 22 * 60; time += 30) {
+    const label = minutesToTime(time)
+    const startsAt = new Date(`${selectedKey}T${label}:00`)
+
+    if (time === start || startsAt < now || busy.some((item) => overlaps(time, time + workout.duration, item))) {
+      continue
+    }
+
+    options.push({ start: time, label, end: minutesToTime(time + workout.duration) })
+  }
+
+  return options
+    .sort((a, b) => Math.abs(a.start - start) - Math.abs(b.start - start) || b.start - a.start)
+    .slice(0, 2)
+}
+
+function WorkoutConflict({ workout, conflicts, options, hasRecord, onConfirm }) {
+  const [selectedTime, setSelectedTime] = useState('')
+
+  return (
+    <div className="fit-calendar__conflict">
+      <h3>운동 시간이 생활 일정과 겹쳐요</h3>
+      <p>현재 운동 시간 {workout.time} ~ {minutesToTime(timeToMinutes(workout.time) + workout.duration)}</p>
+      <ul>
+        {conflicts.map((schedule) => (
+          <li key={schedule.id}>
+            {schedule.title} · {schedule.startTime} ~ {schedule.endTime}
+          </li>
+        ))}
+      </ul>
+
+      {hasRecord ? (
+        <p>이미 기록을 저장한 운동이에요.</p>
+      ) : options.length === 0 ? (
+        <p>이 날짜에 변경할 수 있는 시간이 없어요.</p>
+      ) : (
+        <form onSubmit={(event) => {
+          event.preventDefault()
+          onConfirm(selectedTime)
+        }}>
+          <fieldset>
+            <legend>같은 날 가능한 운동 시간</legend>
+            {options.map((option) => (
+              <label key={option.label}>
+                <input
+                  type="radio"
+                  name="workout-time"
+                  value={option.label}
+                  checked={selectedTime === option.label}
+                  onChange={(event) => setSelectedTime(event.target.value)}
+                  required
+                />
+                {option.label} ~ {option.end}
+              </label>
+            ))}
+          </fieldset>
+          <button className="fit-calendar__action" type="submit">
+            선택한 시간으로 변경
+          </button>
+        </form>
+      )}
+    </div>
+  )
+}
+
 function MonthCalendar({ month, selectedKey, todayKey, schedules, plan, records, onSelect, onMonthChange }) {
   const year = month.getFullYear()
   const monthIndex = month.getMonth()
@@ -131,20 +227,67 @@ export default function SchedulePage() {
   const [selectedDate, setSelectedDate] = useState(today)
   const [month, setMonth] = useState(() => monthStart(today))
   const [schedules, setSchedules] = useState(loadSchedules)
-  const [plan] = useState(loadPlan)
+  const [plan, setPlan] = useState(loadPlan)
   const [records] = useState(loadRecords)
   const [form, setForm] = useState(() => ({ ...initialForm, date: dateKey(today) }))
   const [message, setMessage] = useState('')
+  const [workoutMessage, setWorkoutMessage] = useState('')
 
   const selectedKey = dateKey(selectedDate)
   const selectedSchedules = schedules.filter((schedule) => schedule.date === selectedKey)
   const workout = workoutForDate(plan, selectedDate)
-  const workoutStatus = workout ? getStatus(getValidRecord(records, plan.id, workout.id)) : null
+  const workoutRecord = workout ? getValidRecord(records, plan.id, workout.id) : null
+  const workoutStatus = workout ? getStatus(workoutRecord) : null
+  const workoutStart = workout ? timeToMinutes(workout.time) : 0
+  const conflicts = workout ? selectedSchedules.filter((schedule) =>
+    overlaps(workoutStart, workoutStart + workout.duration, {
+      start: timeToMinutes(schedule.startTime),
+      end: timeToMinutes(schedule.endTime),
+    })
+  ) : []
+  const options = conflicts.length && !workoutRecord
+    ? getChangeOptions(plan, workout, selectedKey, selectedSchedules, today)
+    : []
+
+  function changeWorkoutTime(time) {
+    const currentPlan = loadPlan()
+    const currentWorkout = workoutForDate(currentPlan, selectedDate)
+    const currentSchedules = loadSchedules().filter((schedule) => schedule.date === selectedKey)
+
+    if (
+      !currentWorkout ||
+      currentPlan.approvedAt !== plan.approvedAt ||
+      currentWorkout.id !== workout.id ||
+      currentWorkout.time !== workout.time ||
+      getValidRecord(loadRecords(), currentPlan.id, currentWorkout.id) ||
+      !getChangeOptions(currentPlan, currentWorkout, selectedKey, currentSchedules, new Date())
+        .some((option) => option.label === time)
+    ) {
+      setWorkoutMessage('일정이 바뀌었어요. 화면을 새로 열고 다시 확인해 주세요.')
+      return
+    }
+
+    const updatedPlan = {
+      ...currentPlan,
+      sessions: currentPlan.sessions.map((session) =>
+        session.id === currentWorkout.id ? { ...session, time } : session
+      ),
+    }
+
+    try {
+      savePlan(updatedPlan)
+      setPlan(updatedPlan)
+      setWorkoutMessage(`운동 시간을 ${time}로 변경했어요.`)
+    } catch {
+      setWorkoutMessage('운동 시간을 저장하지 못했어요. 다시 시도해 주세요.')
+    }
+  }
 
   function selectDate(date) {
     setSelectedDate(date)
     setForm((previous) => ({ ...previous, date: dateKey(date) }))
     setMessage('')
+    setWorkoutMessage('')
   }
 
   function changeMonth(offset) {
@@ -200,6 +343,7 @@ export default function SchedulePage() {
       setSelectedDate(date)
       setMonth(monthStart(date))
       setForm({ ...initialForm, date: form.date })
+      setWorkoutMessage('')
       setMessage('일정을 추가했어요.')
     }
   }
@@ -234,6 +378,17 @@ export default function SchedulePage() {
           <>
             <h3>{workout.title}</h3>
             <p>{workout.time} 시작 · {workout.duration}분 · {workoutStatus === '기록 없음' ? '예정' : workoutStatus}</p>
+            {conflicts.length > 0 && (
+              <WorkoutConflict
+                key={`${selectedKey}:${workout.time}:${options.map((option) => option.label).join(',')}`}
+                workout={workout}
+                conflicts={conflicts}
+                options={options}
+                hasRecord={Boolean(workoutRecord)}
+                onConfirm={changeWorkoutTime}
+              />
+            )}
+            {workoutMessage && <p className="fit-calendar__message" role="status">{workoutMessage}</p>}
             <Link className="fit-calendar__action" to={`/workout?session=${encodeURIComponent(workout.id)}`}>
               운동 완료 기록
             </Link>
