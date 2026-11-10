@@ -1,88 +1,15 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { exampleRoutines } from '../workoutRoutines.js'
+import { getStatus, getValidRecord, loadPlan, loadRecords, readStorage, weekdays } from '../workoutPlan.js'
+import FitNavigation from '../components/FitNavigation.jsx'
 import './HomePage.css'
 
-const weekdays = ['일', '월', '화', '수', '목', '금', '토']
 const dateFormat = new Intl.DateTimeFormat('ko-KR', {
   month: 'long',
   day: 'numeric',
   weekday: 'long',
 })
-
-function readStorage(key, fallback) {
-  try {
-    const saved = localStorage.getItem(key)
-    return saved ? JSON.parse(saved) : fallback
-  } catch {
-    return fallback
-  }
-}
-
-function loadPlan() {
-  const plan = readStorage('demo-approved-plan', null)
-
-  if (
-    plan?.id !== 'demo-weekly-plan-1' ||
-    !Array.isArray(plan.sessions) ||
-    plan.sessions.length === 0 ||
-    !plan.sessions.every(
-      (session) =>
-        session &&
-        typeof session.id === 'string' &&
-        typeof session.day === 'string' &&
-        typeof session.title === 'string' &&
-        typeof session.time === 'string' &&
-        Number.isFinite(session.duration) &&
-        session.duration > 0
-    )
-  ) {
-    return null
-  }
-
-  return plan
-}
-
-function loadRecords() {
-  const records = readStorage('demo-session-records', {})
-
-  return records && typeof records === 'object' && !Array.isArray(records)
-    ? records
-    : {}
-}
-
-function getValidRecord(records, planId, sessionId) {
-  const record = records[`${planId}:${sessionId}`]
-
-  if (
-    record?.planId !== planId ||
-    record.sessionId !== sessionId ||
-    !Array.isArray(record.exercises) ||
-    record.exercises.length === 0 ||
-    !record.exercises.every(
-      (exercise) =>
-        exercise && typeof exercise.completed === 'boolean'
-    ) ||
-    typeof record.savedAt !== 'string' ||
-    Number.isNaN(new Date(record.savedAt).getTime())
-  ) {
-    return null
-  }
-
-  return record
-}
-
-function getStatus(record) {
-  if (!record) return '기록 없음'
-
-  const count = record.exercises.filter(
-    (exercise) => exercise.completed
-  ).length
-
-  if (count === record.exercises.length) return '완료'
-  if (count > 0) return '부분 완료'
-  return '미수행'
-}
 
 function loadUpcomingSchedules() {
   const schedules = readStorage('demo-schedules', [])
@@ -119,33 +46,6 @@ function getFeaturedSession(sessions, todayIndex) {
   }
 
   return null
-}
-
-function HomeNavigation() {
-  return (
-    <nav className="fit-home__nav" aria-label="주요 메뉴">
-      <Link to="/" aria-label="홈" aria-current="page">
-        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-          <rect x="5" y="5" width="4" height="14" rx="1.5" />
-          <rect x="15" y="5" width="4" height="14" rx="1.5" />
-          <path d="M9 10h6m-6 4h6M5 9H3v6h2m14-6h2v6h-2" />
-        </svg>
-      </Link>
-      <Link to="/schedule" aria-label="일정">
-        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-          <rect x="4" y="5" width="16" height="15" rx="2" />
-          <path d="M4 9h16M8 3v4m8-4v4" />
-        </svg>
-      </Link>
-      <Link to="/profile" aria-label="프로필">
-        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-          <circle cx="12" cy="12" r="8" />
-          <circle cx="12" cy="10" r="2.5" />
-          <path d="M7.5 17a4.5 4.5 0 0 1 9 0" />
-        </svg>
-      </Link>
-    </nav>
-  )
 }
 
 export default function HomePage() {
@@ -299,7 +199,7 @@ export default function HomePage() {
         <Link to="/signup">초기 정보 입력 및 수정</Link>
       </div>
 
-      <HomeNavigation />
+      <FitNavigation />
     </div>
   )
 }

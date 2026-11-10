@@ -187,39 +187,6 @@
   cursor: pointer;
 }
 
-.fit-home__nav {
-  position: fixed;
-  z-index: 1;
-  bottom: calc(22px + env(safe-area-inset-bottom));
-  left: 50%;
-  display: flex;
-  width: min(280px, calc(100% - 48px));
-  padding: 3px 6px;
-  box-sizing: border-box;
-  border: 1px solid #373735;
-  border-radius: 999px;
-  background: #191919;
-  transform: translateX(-50%);
-}
-
-.fit-home__nav a {
-  display: grid;
-  flex: 1;
-  min-height: 52px;
-  place-items: center;
-  border-radius: 999px;
-  color: #d7cfd3;
-}
-
-.fit-home__nav a[aria-current='page'] {
-  color: var(--home-text);
-}
-
-.fit-home__nav svg {
-  width: 26px;
-  height: 26px;
-}
-
 .fit-home :focus-visible {
   outline: 2px solid var(--home-mint);
   outline-offset: 3px;

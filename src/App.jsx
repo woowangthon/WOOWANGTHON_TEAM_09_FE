@@ -10,7 +10,9 @@ import ProfilePage from './pages/ProfilePage'
 function PageNavigation() {
   const isHome = useMatch({ path: '/', end: true })
 
-  if (isHome) return null
+  const isSchedule = useMatch({ path: '/schedule', end: true })
+
+  if (isHome || isSchedule) return null
 
   return (
     <nav aria-label="주요 메뉴">
