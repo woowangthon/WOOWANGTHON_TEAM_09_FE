@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 import FitNavigation from '../components/FitNavigation.jsx'
 import { createPlan, loadPlan, savePlan } from '../workoutPlan.js'
-import { loadUnavailablePeriod } from '../workoutAvailability.js'
+import { getUnavailableSegments, loadUnavailablePeriod } from '../workoutAvailability.js'
 import { loadTimetable } from '../timetable.js'
 import { exampleRoutines } from '../workoutRoutines.js'
 import './PlanPage.css'
@@ -12,7 +12,7 @@ export default function PlanPage() {
     const saved = loadPlan()
     return typeof saved?.approvedAt === 'string' ? saved : null
   })
-  const [blockedPeriods] = useState(() => [loadUnavailablePeriod(), ...loadTimetable()].filter(Boolean))
+  const [blockedPeriods] = useState(() => [...getUnavailableSegments(loadUnavailablePeriod()), ...loadTimetable()])
   const [message, setMessage] = useState('')
 
   const draftPlan = createPlan(blockedPeriods)

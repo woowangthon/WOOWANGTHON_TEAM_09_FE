@@ -1,0 +1,58 @@
+.fit-connect {
+  display: grid;
+  flex: 1;
+  place-items: center;
+}
+
+.fit-connect__card {
+  display: grid;
+  box-sizing: border-box;
+  width: 100%;
+  gap: 8px;
+  padding: 20px 18px;
+  border: 1px solid #4a4a48;
+  border-radius: 18px;
+  background: #3a3a39;
+  text-align: left;
+}
+
+.fit-connect__card h1 {
+  font-size: 18px;
+  letter-spacing: -0.02em;
+}
+
+.fit-connect__card p {
+  margin: 0 0 8px;
+  color: #e4e4e1;
+  font-size: 12px;
+}
+
+.fit-connect__card button {
+  min-height: 40px;
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.fit-connect__primary {
+  background: #fff0f5;
+  color: #7a1a3c;
+}
+
+.fit-connect__secondary {
+  background: #6e1d3c;
+  color: #fafafa;
+}
+
+.fit-connect__card .fit-connect__message {
+  margin: 4px 0 0;
+  color: #ffd0de;
+}
+
+.fit-connect__card .fit-connect__message:empty {
+  display: none;
+}

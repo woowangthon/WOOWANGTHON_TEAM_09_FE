@@ -2,162 +2,252 @@
   width: 100%;
   max-width: none;
   border: 0;
-  background: #101010;
+  background: #0d0d0d;
 }
 
 .fit-setup {
-  --setup-panel: #242423;
+  --setup-panel: #2a2a29;
   --setup-border: #464644;
-  --setup-muted: #c2c2bf;
+  --setup-muted: #a9a9a6;
   --setup-mint: #6bd2b6;
-  --setup-berry: #a91f50;
+  --setup-berry: #b8245a;
 
+  display: flex;
   box-sizing: border-box;
+  flex-direction: column;
   width: min(100%, 400px);
+  min-height: 100svh;
   margin-inline: auto;
-  padding: max(28px, env(safe-area-inset-top)) 20px calc(28px + env(safe-area-inset-bottom));
+  padding: max(24px, env(safe-area-inset-top)) 20px calc(32px + env(safe-area-inset-bottom));
   color: #fafafa;
   color-scheme: dark;
   font: 14px/1.45 system-ui, 'Malgun Gothic', sans-serif;
-  text-align: left;
-}
-
-.fit-setup__top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  color: var(--setup-muted);
-}
-
-.fit-setup__top a {
-  display: grid;
-  min-width: 44px;
-  min-height: 44px;
-  place-items: center;
-  color: inherit;
-  text-decoration: none;
-}
-
-.fit-setup__progress {
-  margin-top: 10px;
-  color: var(--setup-muted);
-  font-size: 12px;
-}
-
-.fit-setup progress {
-  display: block;
-  width: 100%;
-  height: 6px;
-  margin-top: 5px;
-  accent-color: var(--setup-mint);
-}
-
-.fit-setup h1 {
-  margin: 36px 0 20px;
-  color: inherit;
-  font: 700 clamp(23px, 6.8vw, 28px)/1.28 system-ui, 'Malgun Gothic', sans-serif;
-  letter-spacing: -0.045em;
-  word-break: keep-all;
-}
-
-.fit-setup__welcome {
-  padding-block: clamp(68px, 20vh, 150px) 24px;
   text-align: center;
 }
 
-.fit-setup__welcome h1 {
-  margin-top: 0;
+/* 진행 바 */
+.fit-setup__progress {
+  height: 3px;
+  margin-top: 16px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: #3a3a39;
 }
 
-.fit-setup__welcome p {
-  color: var(--setup-muted);
+.fit-setup__progress span {
+  display: block;
+  height: 100%;
+  background: var(--setup-mint);
+  transition: width 0.3s ease;
 }
 
-.fit-setup__choices,
-.fit-setup__fields {
-  display: grid;
-  gap: 8px;
-  min-width: 0;
-  margin: 0;
-  padding: 0;
-  border: 0;
-}
-
-.fit-setup__option {
+/* 한 화면 */
+.fit-setup__screen {
   display: flex;
-  box-sizing: border-box;
+  flex: 1;
+  flex-direction: column;
   align-items: center;
-  gap: 9px;
-  min-height: 52px;
-  padding: 8px 12px;
-  border: 1px solid var(--setup-border);
-  border-radius: 14px;
-  background: var(--setup-panel);
+  padding-top: clamp(48px, 12vh, 110px);
+}
+
+.fit-setup__screen--welcome {
+  padding-top: clamp(120px, 26vh, 220px);
+}
+
+.fit-setup__screen--top {
+  padding-top: clamp(32px, 7vh, 64px);
+}
+
+.fit-setup h1 {
+  margin: 0;
+  color: inherit;
+  font: 800 clamp(26px, 7.6vw, 30px)/1.3 system-ui, 'Malgun Gothic', sans-serif;
+  letter-spacing: -0.04em;
+  word-break: keep-all;
+}
+
+.fit-setup h1:focus {
+  outline: none;
+}
+
+.fit-setup__options {
+  display: grid;
+  width: min(100%, 260px);
+  gap: 8px;
+  margin-top: clamp(56px, 13vh, 110px);
+}
+
+.fit-setup__screen--welcome .fit-setup__options {
+  margin-top: clamp(120px, 24vh, 200px);
+}
+
+.fit-setup__screen--top .fit-setup__options {
+  margin-top: 32px;
+}
+
+/* 선택 버튼 */
+.fit-setup__choice {
+  min-height: 44px;
+  padding: 8px 16px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: var(--setup-berry);
+  color: #fafafa;
+  font: inherit;
+  font-weight: 600;
+  word-break: keep-all;
   cursor: pointer;
 }
 
-.fit-setup__option:has(input:checked) {
-  border-color: var(--setup-mint);
-  background: #182b26;
+.fit-setup__choice[aria-pressed='true'] {
+  border-color: #ffd0de;
 }
 
-.fit-setup__option input {
-  flex-shrink: 0;
-  width: 17px;
-  height: 17px;
-  margin: 0;
-  accent-color: var(--setup-mint);
+.fit-setup__choice:disabled {
+  opacity: 0.45;
+  cursor: default;
 }
 
-.fit-setup__fields label {
+.fit-setup__prev {
+  justify-self: center;
+  min-height: 36px;
+  margin-top: 8px;
+  padding: 4px 12px;
+  border: 0;
+  background: none;
+  color: var(--setup-muted);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+/* 이름 */
+.fit-setup__name {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 48px;
+  margin-bottom: 4px;
+  padding: 8px 16px;
+  border: 1.5px solid var(--setup-mint);
+  border-radius: 999px;
+  background: transparent;
+  color: #fafafa;
+  font: inherit;
+  font-size: 16px;
+  text-align: center;
+}
+
+.fit-setup__name::placeholder {
+  color: var(--setup-mint);
+}
+
+/* 시간대 선택 */
+.fit-setup__range-summary {
   display: grid;
+  width: 100%;
+  gap: 2px;
+  margin: 20px 0 0;
+}
+
+.fit-setup__range-summary div {
+  display: flex;
+  justify-content: space-between;
+}
+
+.fit-setup__range-summary dt {
+  font-weight: 650;
+}
+
+.fit-setup__range-summary dd {
+  margin: 0;
+}
+
+.fit-setup__hint {
+  margin: 8px 0 0;
+  color: var(--setup-muted);
+  font-size: 12px;
+  word-break: keep-all;
+}
+
+.fit-setup__scrubbers {
+  display: grid;
+  width: 100%;
+  gap: 28px;
+  margin-top: 28px;
+}
+
+/* 신체 정보 */
+.fit-setup__body-card {
+  box-sizing: border-box;
+  width: 100%;
+  margin-top: 40px;
+  padding: 4px 16px;
+  border: 1px solid #3a3a39;
+  border-radius: 16px;
+  background: #1c1c1b;
+  text-align: left;
+}
+
+.fit-setup__body-card label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 48px;
+}
+
+.fit-setup__body-card label + label {
+  border-top: 1px solid #333332;
+}
+
+.fit-setup__body-card label > span:first-child {
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.fit-setup__body-value {
+  display: flex;
+  align-items: center;
   gap: 4px;
   color: var(--setup-muted);
 }
 
-.fit-setup__fields input,
-.fit-setup__fields select {
+.fit-setup__body-card input,
+.fit-setup__body-card select {
   box-sizing: border-box;
-  width: 100%;
-  min-height: 46px;
-  padding: 7px 12px;
-  border: 1px solid var(--setup-border);
-  border-radius: 12px;
-  background: var(--setup-panel);
+  min-height: 36px;
+  padding: 4px 6px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
   color: #fafafa;
   font: inherit;
   font-size: 16px;
+  text-align: right;
 }
 
-.fit-setup__actions {
-  display: grid;
-  gap: 8px;
-  margin-top: 24px;
+.fit-setup__body-card input {
+  width: 72px;
 }
 
-.fit-setup__actions button {
-  min-height: 46px;
-  padding: 6px 12px;
-  border: 1px solid transparent;
-  border-radius: 999px;
-  color: inherit;
-  font: inherit;
-  font-weight: 650;
-  cursor: pointer;
+.fit-setup__body-card select {
+  padding-right: 4px;
+  text-align-last: right;
 }
 
-.fit-setup__primary {
-  background: var(--setup-berry);
+.fit-setup__body-card input:focus,
+.fit-setup__body-card select:focus {
+  background: #2a2a29;
 }
 
-.fit-setup__actions .fit-setup__back {
-  border-color: var(--setup-border);
-  background: var(--setup-panel);
+.fit-setup__privacy {
+  margin: 14px 0 0;
+  color: #6f6f6c;
+  font-size: 11px;
 }
 
 .fit-setup__message {
-  margin-top: 8px;
+  margin: 12px 0 0;
   color: #ffb8cd;
 }
 
@@ -170,11 +260,49 @@
   outline-offset: 2px;
 }
 
-.fit-setup h1:focus {
-  outline: none;
+/* 업로드 화면 공통 (인바디 · 시간표) */
+.fit-setup__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--setup-muted);
 }
 
-.fit-setup__hint {
-  margin-bottom: 4px;
+.fit-setup__top a {
+  display: grid;
+  min-width: 44px;
+  min-height: 44px;
+  place-items: center;
+  color: inherit;
+  text-decoration: none;
+}
+
+.fit-setup__fields {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  text-align: left;
+}
+
+.fit-setup__fields label {
+  display: grid;
+  gap: 4px;
   color: var(--setup-muted);
+}
+
+.fit-setup__fields input,
+.fit-setup__fields select {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 44px;
+  padding: 7px 12px;
+  border: 1px solid var(--setup-border);
+  border-radius: 12px;
+  background: var(--setup-panel);
+  color: #fafafa;
+  font: inherit;
+  font-size: 16px;
 }

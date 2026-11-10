@@ -5,6 +5,8 @@ import SignupPage from './pages/SignupPage'
 import PlanPage from './pages/PlanPage'
 import PlanGeneratePage from './pages/PlanGeneratePage'
 import TimetablePage from './pages/TimetablePage'
+import InbodySetupPage from './pages/InbodySetupPage'
+import CalendarConnectPage from './pages/CalendarConnectPage'
 import WorkoutPage from './pages/WorkoutPage'
 import SchedulePage from './pages/SchedulePage'
 import ProfilePage from './pages/ProfilePage'
@@ -27,9 +29,9 @@ function PageNavigation() {
 
   const isPlanGenerate = useMatch({ path: '/plan/generate', end: true })
 
-  const isTimetable = useMatch({ path: '/setup/timetable', end: true })
+  const isSetup = useMatch({ path: '/setup/*' })
 
-  if (isHome || isSchedule || isProfile || isWorkout || isPlan || isSignup || isReport || isPlanGenerate || isTimetable) return null
+  if (isHome || isSchedule || isProfile || isWorkout || isPlan || isSignup || isReport || isPlanGenerate || isSetup) return null
 
   return (
     <nav aria-label="주요 메뉴">
@@ -56,7 +58,9 @@ export default function App() {
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/plan" element={<PlanPage />} />
           <Route path="/plan/generate" element={<PlanGeneratePage />} />
+          <Route path="/setup/inbody" element={<InbodySetupPage />} />
           <Route path="/setup/timetable" element={<TimetablePage />} />
+          <Route path="/setup/calendar" element={<CalendarConnectPage />} />
           <Route path="/workout" element={<WorkoutPage />} />
           <Route path="/schedule" element={<SchedulePage />} />
           <Route path="/profile" element={<ProfilePage />} />

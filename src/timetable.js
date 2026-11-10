@@ -1,10 +1,10 @@
 import { readStorage } from './workoutPlan.js'
-import { getUnavailablePeriod } from './workoutAvailability.js'
+import { getWeeklyPeriod } from './workoutAvailability.js'
 
 const STORAGE_KEY = 'demo-timetable'
 
 export function getTimetableClass(value) {
-  const period = getUnavailablePeriod(value)
+  const period = getWeeklyPeriod(value)
 
   if (!period || typeof value.id !== 'string' || typeof value.title !== 'string' || !value.title.trim()) {
     return null

@@ -1,148 +1,161 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useNavigate } from 'react-router'
-import TimeSelect from '../components/TimeSelect.jsx'
-import { getUnavailablePeriod } from '../workoutAvailability.js'
-import { weekdays } from '../workoutPlan.js'
+import { useNavigate } from 'react-router'
+import SetupProgress from '../components/SetupProgress.jsx'
+import TimeScrubber from '../components/TimeScrubber.jsx'
+import { crossesMidnight, getUnavailablePeriod } from '../workoutAvailability.js'
 import './SignupPage.css'
 
-const emptyPeriod = { weekday: '', startTime: '', endTime: '' }
+const defaultPeriod = { startTime: '22:00', endTime: '07:00' }
+
+const goals = ['muscle', 'fat', 'fitness', 'unsure', 'general']
+const experiences = ['beginner', 'intermediate', 'advanced']
+const environments = ['gym', 'none', 'campus', 'planned']
+const genders = ['male', 'female', 'none']
 
 const initialProfile = {
-  unavailablePeriod: emptyPeriod,
+  name: '',
   goal: '',
   experience: '',
   environment: '',
+  unavailablePeriod: null,
   height: '',
   weight: '',
   age: '',
+  gender: '',
 }
 
 function loadProfile() {
   try {
-    const saved = localStorage.getItem('demo-profile')
+    const profile = JSON.parse(localStorage.getItem('demo-profile'))
 
-    if (!saved) return initialProfile
-
-    const profile = JSON.parse(saved)
-
-    if (!profile || typeof profile !== 'object') {
-      return initialProfile
-    }
+    if (!profile || typeof profile !== 'object') return initialProfile
 
     return {
-      goal: ['muscle', 'fat', 'fitness', 'general'].includes(profile.goal)
-        ? profile.goal
-        : '',
-      experience: ['beginner', 'intermediate', 'advanced'].includes(
-        profile.experience
-      )
-        ? profile.experience
-        : '',
-      environment: ['campus', 'gym', 'planned'].includes(profile.environment)
-        ? profile.environment
-        : '',
+      name: typeof profile.name === 'string' ? profile.name : '',
+      goal: goals.includes(profile.goal) ? profile.goal : '',
+      experience: experiences.includes(profile.experience) ? profile.experience : '',
+      environment: environments.includes(profile.environment) ? profile.environment : '',
+      unavailablePeriod: getUnavailablePeriod(profile.unavailablePeriod),
       height: Number.isFinite(profile.height) ? String(profile.height) : '',
       weight: Number.isFinite(profile.weight) ? String(profile.weight) : '',
       age: Number.isInteger(profile.age) ? String(profile.age) : '',
-      unavailablePeriod: getUnavailablePeriod(profile.unavailablePeriod) ?? emptyPeriod,
+      gender: genders.includes(profile.gender) ? profile.gender : '',
     }
   } catch {
     return initialProfile
   }
 }
 
-const choiceSteps = [
-  {
+// step: 0 시작 · 1 이름 · 2~4 선택 질문 · 5 어려운 시간 여부 · 6 시간대 선택 · 7 신체 정보
+const choiceSteps = {
+  2: {
     name: 'goal',
-    title: '운동 목표가 어떻게 되시나요?',
+    title: ['운동 목표가', '어떻게 되시나요?'],
     options: [
       { value: 'muscle', label: '근력 및 근육량 향상' },
       { value: 'fat', label: '체지방 관리' },
       { value: 'fitness', label: '기초 체력 및 심폐지구력 향상' },
-      { value: 'general', label: '잘 모르겠어요. 기본 계획 추천' },
+      { value: 'unsure', label: '잘 모르겠어요' },
+      { value: 'general', label: '기본 운동 계획을 추천해주세요' },
     ],
   },
-  {
+  3: {
     name: 'experience',
-    title: '운동 경험이 어떻게 되시나요?',
+    title: ['운동 경험이', '어떻게 되시나요?'],
     options: [
-      { value: 'beginner', label: '초보' },
-      { value: 'intermediate', label: '경험자' },
-      { value: 'advanced', label: '숙련자' },
+      { value: 'beginner', label: '운동은 거의 처음이에요' },
+      { value: 'intermediate', label: '기본적인 운동은 해본 적 있어요' },
+      { value: 'advanced', label: '다양한 운동을 해봤어요' },
     ],
   },
-  {
+  4: {
     name: 'environment',
-    title: '어디에서 운동할 예정인가요?',
+    title: ['헬스장 이용이', '가능한가요?'],
     options: [
-      { value: 'campus', label: '교내 스포츠센터 이용 가능' },
-      { value: 'gym', label: '일반 헬스장 이용 가능' },
-      { value: 'planned', label: '아직 없지만 이용할 예정' },
+      { value: 'gym', label: '네, 이용할 수 있어요' },
+      { value: 'none', label: '아니요, 이용하기 어려워요' },
     ],
   },
-]
+}
+
+const progressByStep = { 1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 5, 7: 6 }
 
 const bodyFields = [
-  { name: 'height', label: '키 (cm)', max: 300, step: 0.1 },
-  { name: 'weight', label: '몸무게 (kg)', max: 500, step: 0.1 },
-  { name: 'age', label: '만 나이', max: 120, step: 1 },
+  { name: 'height', label: '신장', unit: 'cm', max: 300, step: 0.1 },
+  { name: 'weight', label: '체중', unit: 'kg', max: 500, step: 0.1 },
+  { name: 'age', label: '나이', prefix: '(만)', unit: '세', max: 120, step: 1 },
 ]
-
-const availabilityStep = choiceSteps.length + 1
-const lastStep = availabilityStep + 1
 
 export default function SignupPage() {
   const [profile, setProfile] = useState(loadProfile)
-  const [step, setStep] = useState(() => profile.goal ? 1 : 0)
+  const [step, setStep] = useState(() => (profile.goal ? 1 : 0))
+  const [period, setPeriod] = useState(() => profile.unavailablePeriod ?? defaultPeriod)
   const [message, setMessage] = useState('')
   const headingRef = useRef(null)
   const navigate = useNavigate()
 
-  const question = choiceSteps[step - 1]
-  const isWelcome = step === 0
-  const isAvailabilityStep = step === availabilityStep
-  const isLastStep = step === lastStep
-  const period = profile.unavailablePeriod
+  const question = choiceSteps[step]
 
   useEffect(() => {
     headingRef.current?.focus()
   }, [step])
 
-  function handleChange(event) {
-    const { name, value } = event.target
+  function goTo(nextStep) {
+    setMessage('')
+    setStep(nextStep)
+  }
+
+  function goBack() {
+    goTo(step === 7 && !profile.unavailablePeriod ? 5 : step - 1)
+  }
+
+  function update(name, value) {
     setProfile((previous) => ({ ...previous, [name]: value }))
     setMessage('')
   }
 
-  function handlePeriodChange(event) {
-    const { name, value } = event.target
-
-    setProfile((previous) => ({
-      ...previous,
-      unavailablePeriod: { ...previous.unavailablePeriod, [name]: value },
-    }))
-    setMessage('')
+  function choose(name, value) {
+    update(name, value)
+    goTo(step + 1)
   }
 
-  function handleSubmit(event) {
+  function submitName(event) {
     event.preventDefault()
 
-    if (isAvailabilityStep && period.weekday && !getUnavailablePeriod(period)) {
-      setMessage('종료 시간은 시작 시간보다 늦어야 해요.')
+    if (!profile.name.trim()) {
+      setMessage('이름을 입력해 주세요.')
       return
     }
 
-    if (!isLastStep) {
-      setStep((previous) => previous + 1)
+    goTo(2)
+  }
+
+  function confirmPeriod() {
+    const saved = getUnavailablePeriod(period)
+
+    if (!saved) {
+      setMessage('시작과 종료 시간을 다르게 선택해 주세요.')
       return
     }
+
+    update('unavailablePeriod', saved)
+    goTo(7)
+  }
+
+  function skipPeriod() {
+    update('unavailablePeriod', null)
+    goTo(7)
+  }
+
+  function saveProfile(event) {
+    event.preventDefault()
 
     const savedProfile = {
       ...profile,
+      name: profile.name.trim(),
       height: Number(profile.height),
       weight: Number(profile.weight),
       age: Number(profile.age),
-      unavailablePeriod: getUnavailablePeriod(period),
     }
 
     try {
@@ -152,105 +165,152 @@ export default function SignupPage() {
       return
     }
 
-    navigate('/setup/timetable')
+    navigate('/setup/inbody')
   }
 
-  function goBack() {
-    setMessage('')
-    setStep((previous) => previous - 1)
+  const backButton = (
+    <button className="fit-setup__prev" type="button" onClick={goBack}>이전으로</button>
+  )
+
+  function heading(lines) {
+    return (
+      <h1 ref={headingRef} tabIndex={-1}>
+        {lines.map((line, index) => (
+          <span key={line}>{index > 0 && <br />}{line}</span>
+        ))}
+      </h1>
+    )
   }
 
   return (
     <div className="fit-setup">
-      <div className="fit-setup__top">
-        <span>운동 프로필 설정</span>
-        <Link to="/profile">닫기</Link>
-      </div>
+      {step > 0 && <SetupProgress step={progressByStep[step]} />}
 
-      {!isWelcome && (
-        <div className="fit-setup__progress">
-          <label htmlFor="setup-progress">단계 {step} / {lastStep}</label>
-          <progress id="setup-progress" value={step} max={lastStep} />
+      {step === 0 && (
+        <div className="fit-setup__screen fit-setup__screen--welcome">
+          {heading(['안녕하세요'])}
+          <div className="fit-setup__options">
+            <button className="fit-setup__choice" type="button" onClick={() => goTo(1)}>시작하기</button>
+          </div>
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className={isWelcome ? 'fit-setup__welcome' : undefined}>
-        <h1 id="setup-title" ref={headingRef} tabIndex={-1}>
-          {isWelcome ? '안녕하세요!' : question?.title ?? (isAvailabilityStep ? '운동하기 어려운 시간대가 있나요?' : '기본 신체 정보를 입력해 주세요.')}
-        </h1>
-
-        {isWelcome && <p>운동 목표와 환경을 등록하고 내 운동 프로필을 만들어 보세요.</p>}
-
-        {question && (
-          <fieldset className="fit-setup__choices" aria-labelledby="setup-title">
-            {question.options.map((option) => (
-              <label className="fit-setup__option" key={option.value}>
-                <input
-                  type="radio"
-                  name={question.name}
-                  value={option.value}
-                  checked={profile[question.name] === option.value}
-                  onChange={handleChange}
-                  required
-                />
-                <span>{option.label}</span>
-              </label>
-            ))}
-          </fieldset>
-        )}
-
-        {isAvailabilityStep && (
-          <div className="fit-setup__fields">
-            <p className="fit-setup__hint">달력에서 운동 시간을 바꿀 때 매주 이 시간대를 제외해요.</p>
-            <label>
-              요일
-              <select name="weekday" value={period.weekday} onChange={handlePeriodChange}>
-                <option value="">제한 없음</option>
-                {weekdays.map((day, index) => (
-                  <option key={day} value={index}>{day}요일</option>
-                ))}
-              </select>
-            </label>
-            {period.weekday && (
-              <>
-                <TimeSelect label="시작 시간" name="startTime" value={period.startTime} onChange={handlePeriodChange} required />
-                <TimeSelect label="종료 시간" name="endTime" value={period.endTime} onChange={handlePeriodChange} required />
-              </>
-            )}
+      {step === 1 && (
+        <form className="fit-setup__screen" onSubmit={submitName}>
+          {heading(['이름을', '알려주세요'])}
+          <div className="fit-setup__options">
+            <input
+              className="fit-setup__name"
+              name="name"
+              value={profile.name}
+              onChange={(event) => update('name', event.target.value)}
+              placeholder="이름"
+              aria-label="이름"
+              maxLength={20}
+              autoComplete="given-name"
+            />
+            <button className="fit-setup__choice" type="submit" disabled={!profile.name.trim()}>다음</button>
+            {profile.goal && backButton}
           </div>
-        )}
+        </form>
+      )}
 
-        {isLastStep && (
-          <div className="fit-setup__fields">
+      {question && (
+        <div className="fit-setup__screen">
+          {heading(question.title)}
+          <div className="fit-setup__options" role="group" aria-label={question.title.join(' ')}>
+            {question.options.map((option) => (
+              <button
+                key={option.value}
+                className="fit-setup__choice"
+                type="button"
+                aria-pressed={profile[question.name] === option.value}
+                onClick={() => choose(question.name, option.value)}
+              >
+                {option.label}
+              </button>
+            ))}
+            {backButton}
+          </div>
+        </div>
+      )}
+
+      {step === 5 && (
+        <div className="fit-setup__screen">
+          {heading(['운동하기 어려운', '시간대가 있나요?'])}
+          <div className="fit-setup__options">
+            <button className="fit-setup__choice" type="button" aria-pressed={Boolean(profile.unavailablePeriod)} onClick={() => goTo(6)}>
+              네, 시간대를 선택할게요
+            </button>
+            <button className="fit-setup__choice" type="button" onClick={skipPeriod}>없어요, 다음으로</button>
+            {backButton}
+          </div>
+        </div>
+      )}
+
+      {step === 6 && (
+        <div className="fit-setup__screen fit-setup__screen--top">
+          {heading(['시간대 선택하기'])}
+          <dl className="fit-setup__range-summary">
+            <div><dt>시작</dt><dd>{period.startTime} 부터</dd></div>
+            <div><dt>종료</dt><dd>{crossesMidnight(period) ? '다음 날 ' : ''}{period.endTime} 까지</dd></div>
+          </dl>
+          <p className="fit-setup__hint">매일 이 시간에는 운동 계획을 잡지 않아요.</p>
+          <div className="fit-setup__scrubbers">
+            <TimeScrubber label="시작" value={period.startTime} onChange={(startTime) => setPeriod((previous) => ({ ...previous, startTime }))} />
+            <TimeScrubber label="종료" value={period.endTime} onChange={(endTime) => setPeriod((previous) => ({ ...previous, endTime }))} />
+          </div>
+          <div className="fit-setup__options">
+            <button className="fit-setup__choice" type="button" onClick={confirmPeriod}>선택 완료</button>
+            {backButton}
+          </div>
+        </div>
+      )}
+
+      {step === 7 && (
+        <form className="fit-setup__screen fit-setup__screen--top" onSubmit={saveProfile}>
+          {heading(['기본 신체 정보를', '입력해주세요'])}
+          <div className="fit-setup__body-card">
             {bodyFields.map((field) => (
               <label key={field.name}>
-                {field.label}
-                <input
-                  type="number"
-                  name={field.name}
-                  value={profile[field.name]}
-                  onChange={handleChange}
-                  min={1}
-                  max={field.max}
-                  step={field.step}
-                  required
-                />
+                <span>{field.label}</span>
+                <span className="fit-setup__body-value">
+                  {field.prefix && <small>{field.prefix}</small>}
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    name={field.name}
+                    value={profile[field.name]}
+                    onChange={(event) => update(field.name, event.target.value)}
+                    min={1}
+                    max={field.max}
+                    step={field.step}
+                    placeholder="0"
+                    required
+                  />
+                  <small>{field.unit}</small>
+                </span>
               </label>
             ))}
+            <label>
+              <span>성별</span>
+              <select name="gender" value={profile.gender} onChange={(event) => update('gender', event.target.value)} required>
+                <option value="" disabled>선택</option>
+                <option value="male">남성</option>
+                <option value="female">여성</option>
+                <option value="none">선택 안 함</option>
+              </select>
+            </label>
           </div>
-        )}
+          <p className="fit-setup__privacy">입력한 정보는 운동 계획 추천에만 사용돼요.</p>
+          <div className="fit-setup__options">
+            <button className="fit-setup__choice" type="submit">완료</button>
+            {backButton}
+          </div>
+        </form>
+      )}
 
-        <div className="fit-setup__actions">
-          <button className="fit-setup__primary" type="submit">
-            {isWelcome ? '시작하기' : isLastStep ? '저장하고 다음' : '다음'}
-          </button>
-          {!isWelcome && (
-            <button className="fit-setup__back" type="button" onClick={goBack}>이전</button>
-          )}
-        </div>
-
-        <p className="fit-setup__message" role="status">{message}</p>
-      </form>
+      <p className="fit-setup__message" role="status">{message}</p>
     </div>
   )
 }

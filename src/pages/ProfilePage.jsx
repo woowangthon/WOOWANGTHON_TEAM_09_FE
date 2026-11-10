@@ -3,12 +3,14 @@ import { Link } from 'react-router'
 import FitNavigation from '../components/FitNavigation.jsx'
 import { getUnavailablePeriod, getUnavailableTimeLabel } from '../workoutAvailability.js'
 import { loadTimetable } from '../timetable.js'
+import { loadInbody } from '../inbody.js'
 import './ProfilePage.css'
 
 const goalLabels = {
   muscle: '근력 및 근육량 향상',
   fat: '체지방 관리',
   fitness: '기초 체력 및 심폐지구력 향상',
+  unsure: '잘 모르겠어요',
   general: '기본 운동 계획 추천',
 }
 
@@ -19,8 +21,9 @@ const experienceLabels = {
 }
 
 const environmentLabels = {
+  none: '헬스장 이용 어려움',
   campus: '교내 스포츠센터 이용 가능',
-  gym: '일반 헬스장 이용 가능',
+  gym: '헬스장 이용 가능',
   planned: '아직 없지만 이용할 예정',
 }
 
@@ -46,39 +49,6 @@ function loadProfile() {
     return profile
   } catch {
     return null
-  }
-}
-
-function loadInbody() {
-  const empty = {
-    bodyFat: '',
-    muscleMass: '',
-    measuredAt: '',
-  }
-
-  try {
-    const data = JSON.parse(localStorage.getItem('demo-inbody'))
-
-    if (
-      !data ||
-      !Number.isFinite(data.bodyFat) ||
-      data.bodyFat <= 0 ||
-      data.bodyFat > 100 ||
-      !Number.isFinite(data.muscleMass) ||
-      data.muscleMass <= 0 ||
-      typeof data.measuredAt !== 'string' ||
-      !/^\d{4}-\d{2}-\d{2}$/.test(data.measuredAt)
-    ) {
-      return empty
-    }
-
-    return {
-      bodyFat: String(data.bodyFat),
-      muscleMass: String(data.muscleMass),
-      measuredAt: data.measuredAt,
-    }
-  } catch {
-    return empty
   }
 }
 

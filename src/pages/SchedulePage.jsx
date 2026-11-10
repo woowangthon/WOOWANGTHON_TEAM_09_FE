@@ -135,7 +135,7 @@ function WorkoutConflict({ workout, conflicts, options, hasRecord, onConfirm }) 
       <p>현재 운동 시간 {workout.time} ~ {minutesToTime(timeToMinutes(workout.time) + workout.duration)}</p>
       <ul>
         {conflicts.map((schedule) => (
-          <li key={schedule.isUnavailable ? 'unavailable-period' : schedule.id}>
+          <li key={schedule.id}>
             {schedule.isClass ? `수업 · ${schedule.title}` : schedule.title} · {schedule.startTime} ~ {schedule.endTime}
           </li>
         ))}
@@ -250,7 +250,7 @@ export default function SchedulePage() {
   const workoutRecord = workout ? getValidRecord(records, plan.id, workout.id) : null
   const workoutStatus = workout ? getStatus(workoutRecord) : null
   const workoutStart = workout ? timeToMinutes(workout.time) : 0
-  const busyPeriods = withUnavailablePeriod(withTimetable(selectedSchedules, timetable, selectedDate), unavailablePeriod, selectedDate)
+  const busyPeriods = withUnavailablePeriod(withTimetable(selectedSchedules, timetable, selectedDate), unavailablePeriod)
   const conflicts = workout ? busyPeriods.filter((schedule) =>
     overlaps(workoutStart, workoutStart + workout.duration, {
       start: timeToMinutes(schedule.startTime),
@@ -265,7 +265,7 @@ export default function SchedulePage() {
     const currentPlan = loadPlan()
     const currentWorkout = workoutForDate(currentPlan, selectedDate)
     const currentSchedules = loadSchedules().filter((schedule) => schedule.date === selectedKey)
-    const currentBusyPeriods = withUnavailablePeriod(withTimetable(currentSchedules, loadTimetable(), selectedDate), loadUnavailablePeriod(), selectedDate)
+    const currentBusyPeriods = withUnavailablePeriod(withTimetable(currentSchedules, loadTimetable(), selectedDate), loadUnavailablePeriod())
 
     if (
       !currentWorkout ||

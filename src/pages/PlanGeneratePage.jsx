@@ -3,9 +3,9 @@ import { useNavigate } from 'react-router'
 import './PlanGeneratePage.css'
 
 const steps = [
-  '운동 목표와 경험을 분석하는 중...',
-  '운동 가능한 시간대를 찾는 중...',
-  '주간 루틴을 구성하는 중...',
+  { title: '운동 목표와 경험을 확인하는중', detail: '입력한 정보를 바탕으로 분석하고 있어요' },
+  { title: '운동 가능한 시간대를 찾는중', detail: '목표에 맞는 루틴을 구성하고 있어요' },
+  { title: '주간 운동 계획을 만드는중', detail: '거의 다 됐어요' },
 ]
 
 const STEP_DURATION = 900
@@ -29,12 +29,14 @@ export default function PlanGeneratePage() {
   return (
     <div className="fit-generate">
       <h1>맞춤 운동 계획을<br />생성하고 있어요</h1>
-      <p className="fit-generate__sub">입력한 목표, 경험, 운동하기 어려운 시간을 반영해요.</p>
+      <p className="fit-generate__sub">목표와 운동 경험, 캘린더를 확인하고 있어요</p>
 
       <div className="fit-generate__spinner" aria-hidden="true" />
 
-      <p className="fit-generate__status" role="status">{steps[stepIndex]}</p>
-      <p className="fit-generate__note">잠시만 기다려 주세요.</p>
+      <div className="fit-generate__status" role="status">
+        <p>{steps[stepIndex].title}</p>
+        <p className="fit-generate__note">{steps[stepIndex].detail}</p>
+      </div>
     </div>
   )
 }

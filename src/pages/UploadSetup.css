@@ -1,0 +1,106 @@
+/* 인바디 · 시간표 업로드 화면 공통 */
+.fit-setup__skip {
+  min-height: 36px;
+  margin-top: 12px;
+  padding: 4px 12px;
+  border: 0;
+  background: none;
+  color: #a9a9a6;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.fit-setup__panel {
+  box-sizing: border-box;
+  width: 100%;
+  margin-top: 20px;
+  padding: 14px;
+  border: 1px solid #3a3a39;
+  border-radius: 16px;
+  background: #1c1c1b;
+}
+
+.fit-setup__panel-times {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.fit-setup__add {
+  min-height: 44px;
+  margin-top: 4px;
+  border: 1px solid #6bd2b6;
+  border-radius: 999px;
+  background: #182b26;
+  color: #fafafa;
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.fit-setup__list {
+  width: 100%;
+  margin-top: 20px;
+  text-align: left;
+}
+
+.fit-setup__list h2 {
+  margin: 0 0 8px;
+  color: inherit;
+  font-size: 15px;
+}
+
+.fit-setup__list ul {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fit-setup__list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid #3a3a39;
+  border-radius: 12px;
+  background: #1c1c1b;
+}
+
+.fit-setup__list li span {
+  display: grid;
+  min-width: 0;
+}
+
+.fit-setup__list small {
+  color: #a9a9a6;
+}
+
+.fit-setup__list button {
+  flex-shrink: 0;
+  min-height: 32px;
+  padding: 4px 12px;
+  border: 1px solid #464644;
+  border-radius: 999px;
+  background: #151515;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.fit-setup__status {
+  margin: 12px 0 0;
+  color: #a9a9a6;
+}
+
+.fit-setup__status:empty {
+  display: none;
+}
+
+.fit-setup__next {
+  width: min(100%, 260px);
+  margin-top: 24px;
+}

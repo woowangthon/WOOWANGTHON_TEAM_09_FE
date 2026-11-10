@@ -128,8 +128,9 @@ function toTime(minutes) {
 
 // 운동하기 어려운 시간·수업 시간과 겹치는 세션을 같은 날 가장 가까운 빈 시간으로 옮겨요.
 export function createPlan(blockedPeriods = []) {
+  // weekday가 없는 구간은 매일 적용돼요.
   const blocks = blockedPeriods.filter(Boolean).map((period) => ({
-    day: `${weekdays[Number(period.weekday)]}요일`,
+    day: period.weekday === undefined ? null : `${weekdays[Number(period.weekday)]}요일`,
     start: toMinutes(period.startTime),
     end: toMinutes(period.endTime),
   }))
@@ -139,7 +140,7 @@ export function createPlan(blockedPeriods = []) {
   return {
     ...examplePlan,
     sessions: examplePlan.sessions.map((session) => {
-      const dayBlocks = blocks.filter((block) => block.day === session.day)
+      const dayBlocks = blocks.filter((block) => block.day === null || block.day === session.day)
       const isFree = (start) =>
         start >= DAY_START &&
         start + session.duration <= DAY_END &&

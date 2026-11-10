@@ -46,9 +46,20 @@
 }
 
 .fit-generate__status {
-  margin: auto 0 6px;
+  margin-top: auto;
+}
+
+.fit-generate__status p {
+  margin: 0 0 6px;
   color: #fafafa;
+  font-size: 15px;
   font-weight: 650;
+}
+
+.fit-generate__status .fit-generate__note {
+  color: #8a8a87;
+  font-size: 13px;
+  font-weight: 400;
 }
 
 @keyframes fit-generate-spin {
