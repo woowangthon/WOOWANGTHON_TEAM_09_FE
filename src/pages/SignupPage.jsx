@@ -151,7 +151,7 @@ export default function SignupPage() {
       return
     }
 
-    navigate('/profile')
+    navigate('/plan/generate')
   }
 
   function goBack() {
@@ -247,7 +247,7 @@ export default function SignupPage() {
 
         <div className="fit-setup__actions">
           <button className="fit-setup__primary" type="submit">
-            {isWelcome ? '시작하기' : isLastStep ? '저장하고 프로필 보기' : '다음'}
+            {isWelcome ? '시작하기' : isLastStep ? '저장하고 맞춤 계획 만들기' : '다음'}
           </button>
           {!isWelcome && (
             <button className="fit-setup__back" type="button" onClick={goBack}>이전</button>

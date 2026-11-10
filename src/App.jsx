@@ -3,6 +3,7 @@ import { BrowserRouter, Link, Route, Routes, useMatch } from 'react-router'
 import HomePage from './pages/HomePage'
 import SignupPage from './pages/SignupPage'
 import PlanPage from './pages/PlanPage'
+import PlanGeneratePage from './pages/PlanGeneratePage'
 import WorkoutPage from './pages/WorkoutPage'
 import SchedulePage from './pages/SchedulePage'
 import ProfilePage from './pages/ProfilePage'
@@ -23,7 +24,9 @@ function PageNavigation() {
 
   const isReport = useMatch({ path: '/report', end: true })
 
-  if (isHome || isSchedule || isProfile || isWorkout || isPlan || isSignup || isReport) return null
+  const isPlanGenerate = useMatch({ path: '/plan/generate', end: true })
+
+  if (isHome || isSchedule || isProfile || isWorkout || isPlan || isSignup || isReport || isPlanGenerate) return null
 
   return (
     <nav aria-label="주요 메뉴">
@@ -49,6 +52,7 @@ export default function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/plan" element={<PlanPage />} />
+          <Route path="/plan/generate" element={<PlanGeneratePage />} />
           <Route path="/workout" element={<WorkoutPage />} />
           <Route path="/schedule" element={<SchedulePage />} />
           <Route path="/profile" element={<ProfilePage />} />

@@ -164,3 +164,17 @@
   outline: 2px solid var(--plan-mint);
   outline-offset: 2px;
 }
+
+.fit-plan__notice {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--plan-border);
+  border-radius: 12px;
+  background: #182b26;
+  color: #fafafa;
+  word-break: keep-all;
+}
+
+.fit-plan__adjusted {
+  color: var(--plan-mint);
+}
