@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router'
+import { useNavigate, useSearchParams } from 'react-router'
 import SetupProgress from '../components/SetupProgress.jsx'
 import TimeScrubber from '../components/TimeScrubber.jsx'
 import { crossesMidnight, getUnavailablePeriod } from '../workoutAvailability.js'
@@ -86,9 +86,14 @@ const bodyFields = [
   { name: 'age', label: '나이', prefix: '(만)', unit: '세', max: 120, step: 1 },
 ]
 
+// ?edit=body · ?edit=time 으로 들어오면 그 단계만 고치고 프로필로 돌아가요.
+const editSteps = { body: 7, time: 5 }
+
 export default function SignupPage() {
+  const [searchParams] = useSearchParams()
   const [profile, setProfile] = useState(loadProfile)
-  const [step, setStep] = useState(() => (profile.goal ? 1 : 0))
+  const [editStep] = useState(() => (profile.goal ? editSteps[searchParams.get('edit')] : undefined))
+  const [step, setStep] = useState(() => editStep ?? (profile.goal ? 1 : 0))
   const [period, setPeriod] = useState(() => profile.unavailablePeriod ?? defaultPeriod)
   const [message, setMessage] = useState('')
   const headingRef = useRef(null)
@@ -106,7 +111,39 @@ export default function SignupPage() {
   }
 
   function goBack() {
+    if (step === editStep) {
+      navigate('/profile')
+      return
+    }
+
     goTo(step === 7 && !profile.unavailablePeriod ? 5 : step - 1)
+  }
+
+  function persist(nextProfile) {
+    try {
+      localStorage.setItem('demo-profile', JSON.stringify({
+        ...nextProfile,
+        name: nextProfile.name.trim(),
+        height: Number(nextProfile.height),
+        weight: Number(nextProfile.weight),
+        age: Number(nextProfile.age),
+      }))
+      return true
+    } catch {
+      setMessage('저장하지 못했어요. 다시 시도해 주세요.')
+      return false
+    }
+  }
+
+  // 시간대만 고치는 중이면 바로 저장하고 프로필로, 아니면 신체 정보 단계로
+  function finishPeriod(unavailablePeriod) {
+    if (editStep === 5) {
+      if (persist({ ...profile, unavailablePeriod })) navigate('/profile')
+      return
+    }
+
+    update('unavailablePeriod', unavailablePeriod)
+    goTo(7)
   }
 
   function update(name, value) {
@@ -138,34 +175,17 @@ export default function SignupPage() {
       return
     }
 
-    update('unavailablePeriod', saved)
-    goTo(7)
+    finishPeriod(saved)
   }
 
   function skipPeriod() {
-    update('unavailablePeriod', null)
-    goTo(7)
+    finishPeriod(null)
   }
 
   function saveProfile(event) {
     event.preventDefault()
 
-    const savedProfile = {
-      ...profile,
-      name: profile.name.trim(),
-      height: Number(profile.height),
-      weight: Number(profile.weight),
-      age: Number(profile.age),
-    }
-
-    try {
-      localStorage.setItem('demo-profile', JSON.stringify(savedProfile))
-    } catch {
-      setMessage('저장하지 못했어요. 다시 시도해 주세요.')
-      return
-    }
-
-    navigate('/setup/inbody')
+    if (persist(profile)) navigate(editStep ? '/profile' : '/setup/inbody')
   }
 
   const backButton = (
@@ -184,7 +204,7 @@ export default function SignupPage() {
 
   return (
     <div className="fit-setup">
-      {step > 0 && <SetupProgress step={progressByStep[step]} />}
+      {step > 0 && !editStep && <SetupProgress step={progressByStep[step]} />}
 
       {step === 0 && (
         <div className="fit-setup__screen fit-setup__screen--welcome">

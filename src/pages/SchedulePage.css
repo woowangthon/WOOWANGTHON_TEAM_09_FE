@@ -6,213 +6,243 @@
 }
 
 .fit-calendar {
-  --calendar-panel: #252523;
-  --calendar-border: #454542;
-  --calendar-muted: #c2c2bf;
+  --calendar-panel: #333332;
+  --calendar-border: #4a4a48;
+  --calendar-muted: #b5b5b2;
   --calendar-mint: #6bd2b6;
-  --calendar-pink: #fff0f7;
+  --calendar-pink: #fff0f5;
+  --calendar-berry: #7a1a3c;
 
   box-sizing: border-box;
   width: min(100%, 400px);
   margin-inline: auto;
-  padding: max(54px, env(safe-area-inset-top)) 20px calc(104px + env(safe-area-inset-bottom));
+  padding: max(56px, env(safe-area-inset-top)) 20px calc(120px + env(safe-area-inset-bottom));
   color: #fafafa;
   color-scheme: dark;
   font: 14px/1.45 system-ui, 'Malgun Gothic', sans-serif;
   text-align: left;
 }
 
-.fit-calendar h1,
 .fit-calendar h2,
 .fit-calendar h3 {
   margin: 0;
   color: inherit;
   font-family: inherit;
-  font-weight: 700;
 }
 
-.fit-calendar h1 {
-  margin-bottom: 16px;
-  font-size: 27px;
-  letter-spacing: -0.04em;
-}
-
-.fit-calendar h2 {
-  font-size: 18px;
-}
-
-.fit-calendar h3 {
-  font-size: 16px;
+.fit-calendar__sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .fit-calendar__card {
-  padding: 14px;
+  box-sizing: border-box;
+  padding: 16px;
   border: 1px solid var(--calendar-border);
-  border-radius: 22px;
+  border-radius: 16px;
   background: var(--calendar-panel);
 }
 
+.fit-calendar__card + .fit-calendar__card {
+  margin-top: 14px;
+}
+
+/* 달력 */
 .fit-calendar__month {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 5px;
+  margin-bottom: 10px;
 }
 
-.fit-calendar__month button,
-.fit-calendar__day {
-  display: grid;
-  min-height: 40px;
-  place-items: center;
-  border: 1px solid transparent;
-  border-radius: 10px;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  cursor: pointer;
+.fit-calendar__month h2 {
+  font-size: 16px;
+  font-weight: 800;
 }
 
 .fit-calendar__month button {
-  width: 40px;
-  font-size: 26px;
-  line-height: 1;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--calendar-muted);
+  font: inherit;
+  font-size: 20px;
+  cursor: pointer;
 }
 
 .fit-calendar__grid {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 2px;
+  row-gap: 4px;
+  justify-items: center;
 }
 
 .fit-calendar__weekday {
-  padding-block: 5px;
-  color: var(--calendar-muted);
+  padding-bottom: 4px;
+  color: #e4e4e1;
   font-size: 12px;
-  text-align: center;
+  font-weight: 650;
 }
 
 .fit-calendar__day {
-  align-content: center;
-  gap: 2px;
+  position: relative;
+  display: grid;
+  width: 36px;
+  height: 36px;
   padding: 0;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: var(--calendar-mint);
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
 }
 
-.fit-calendar__day[aria-current='date'] {
-  border-color: var(--calendar-mint);
-}
-
-.fit-calendar__day[aria-pressed='true'] {
-  border-color: var(--calendar-mint);
-  background: var(--calendar-mint);
-  color: #102c23;
-  font-weight: 700;
-}
-
-.fit-calendar__day:hover:not([aria-pressed='true']),
-.fit-calendar__month button:hover {
-  background: #373735;
-}
-
-.fit-calendar__markers {
-  display: flex;
-  min-height: 5px;
-  gap: 3px;
-}
-
-.fit-calendar__workout-dot,
-.fit-calendar__schedule-dot {
-  display: inline-block;
+.fit-calendar__day span {
+  display: grid;
   box-sizing: border-box;
-  width: 6px;
-  height: 6px;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border: 1.5px solid transparent;
   border-radius: 50%;
 }
 
-.fit-calendar__workout-dot {
-  border: 1px solid var(--calendar-mint);
-}
-
-.fit-calendar__workout-dot[data-status='완료'] {
+.fit-calendar__day[data-state='done'] span {
   background: var(--calendar-mint);
+  color: #fafafa;
 }
 
-.fit-calendar__workout-dot[data-status='부분 완료'] {
+.fit-calendar__day[data-state='partial'] span {
+  border-color: var(--calendar-mint);
   background: linear-gradient(90deg, var(--calendar-mint) 50%, transparent 50%);
+  color: #fafafa;
 }
 
-.fit-calendar__workout-dot[data-status='미수행'] {
-  border-color: #9a9a97;
+.fit-calendar__day[data-state='planned'] span {
+  border-color: var(--calendar-mint);
+}
+
+.fit-calendar__day[data-state='missed'] span {
+  background: #5a5a58;
+  color: #e4e4e1;
+}
+
+.fit-calendar__day[aria-current='date'] span {
+  font-weight: 800;
+}
+
+.fit-calendar__day[aria-pressed='true'] span {
+  border-color: #000;
+  background: #000;
+  color: #fafafa;
 }
 
 .fit-calendar__schedule-dot {
-  background: #f0a8c4;
+  position: absolute;
+  bottom: 1px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #ff9ec0;
 }
 
-.fit-calendar__day[aria-pressed='true'] .fit-calendar__workout-dot {
-  border-color: currentColor;
+/* 선택한 날 */
+.fit-calendar__day-card {
+  position: relative;
 }
 
-.fit-calendar__day[aria-pressed='true'] .fit-calendar__workout-dot[data-status='완료'] {
-  background: currentColor;
-}
-
-.fit-calendar__day[aria-pressed='true'] .fit-calendar__workout-dot[data-status='부분 완료'] {
-  background: linear-gradient(90deg, currentColor 50%, transparent 50%);
-}
-
-.fit-calendar__day[aria-pressed='true'] .fit-calendar__schedule-dot {
-  background: #77223f;
-}
-
-.fit-calendar__legend {
-  display: flex;
-  gap: 14px;
-  margin: 8px 4px 14px;
+.fit-calendar__date {
+  margin: 0 0 6px;
   color: var(--calendar-muted);
+  font-size: 11px;
+}
+
+.fit-calendar__day-card h3 {
+  margin-bottom: 6px;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.fit-calendar__meta {
+  margin: 0;
+  color: #e4e4e1;
   font-size: 12px;
 }
 
-.fit-calendar__day-details h2 {
-  margin-bottom: 9px;
-}
-
-.fit-calendar__day-details p {
-  color: var(--calendar-muted);
-}
-
-.fit-calendar__day-details a:not(.fit-calendar__action) {
-  display: inline-block;
-  margin-top: 5px;
-  color: var(--calendar-mint);
+.fit-calendar__badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--calendar-mint);
+  color: #10302a;
+  font-size: 11px;
+  font-weight: 700;
 }
 
 .fit-calendar__action {
   display: grid;
   box-sizing: border-box;
   width: 100%;
-  min-height: 44px;
-  margin-top: 10px;
+  min-height: 42px;
+  margin-top: 14px;
   padding: 4px 12px;
   place-items: center;
   border: 0;
   border-radius: 999px;
   background: var(--calendar-pink);
-  color: #77223f;
+  color: var(--calendar-berry);
   font: inherit;
-  font-weight: 650;
+  font-size: 13px;
+  font-weight: 600;
   text-align: center;
   text-decoration: none;
   cursor: pointer;
 }
 
-.fit-calendar h3.fit-calendar__schedule-title {
-  margin-top: 16px;
-  padding-top: 12px;
-  border-top: 1px solid var(--calendar-border);
+.fit-calendar__message {
+  margin: 8px 0 0;
+  color: var(--calendar-mint);
+  font-size: 12px;
+}
+
+.fit-calendar__message:empty {
+  display: none;
+}
+
+/* 생활 일정 */
+.fit-calendar__life summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 28px;
+  font-weight: 700;
+  list-style: none;
+  cursor: pointer;
+}
+
+.fit-calendar__life summary::-webkit-details-marker {
+  display: none;
+}
+
+.fit-calendar__life summary small {
+  color: var(--calendar-muted);
+  font-weight: 400;
 }
 
 .fit-calendar__events {
-  margin: 4px 0 0;
+  display: grid;
+  gap: 6px;
+  margin: 12px 0 0;
   padding: 0;
   list-style: none;
 }
@@ -222,59 +252,50 @@
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding-block: 7px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #262625;
 }
 
-.fit-calendar__events li + li {
-  border-top: 1px solid var(--calendar-border);
-}
-
-.fit-calendar__events strong {
-  overflow-wrap: anywhere;
+.fit-calendar__events p {
+  margin: 0;
+  color: var(--calendar-muted);
+  font-size: 12px;
 }
 
 .fit-calendar__events button {
-  flex-shrink: 0;
-  min-height: 38px;
-  padding-inline: 10px;
+  min-height: 32px;
+  padding: 4px 12px;
   border: 1px solid var(--calendar-border);
-  border-radius: 8px;
-  background: #171717;
+  border-radius: 999px;
+  background: #151515;
   color: inherit;
   font: inherit;
+  font-size: 12px;
   cursor: pointer;
 }
 
 .fit-calendar__add {
-  margin-top: 12px;
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
 }
 
-.fit-calendar__add summary {
-  min-height: 24px;
-  font-weight: 650;
-  cursor: pointer;
-}
-
-.fit-calendar__add form,
 .fit-calendar__add label {
   display: grid;
-  gap: 6px;
-}
-
-.fit-calendar__add form {
-  gap: 10px;
-  margin-top: 12px;
+  gap: 4px;
+  color: var(--calendar-muted);
+  font-size: 13px;
 }
 
 .fit-calendar__add input {
   box-sizing: border-box;
   width: 100%;
-  min-width: 0;
-  min-height: 40px;
-  padding: 6px 8px;
+  min-height: 42px;
+  padding: 6px 10px;
   border: 1px solid var(--calendar-border);
-  border-radius: 8px;
-  background: #171717;
+  border-radius: 10px;
+  background: #1b1b1a;
   color: inherit;
   font: inherit;
   font-size: 16px;
@@ -286,16 +307,12 @@
   gap: 8px;
 }
 
-.fit-calendar__message {
-  margin-top: 8px;
-  color: var(--calendar-mint);
-}
-
 .fit-calendar :focus-visible {
   outline: 2px solid var(--calendar-mint);
   outline-offset: 2px;
 }
 
+/* 운동 시간 충돌 안내 */
 .fit-calendar__conflict {
   margin-block: 12px;
   padding: 12px;

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router'
+import { Link, useNavigate, useSearchParams } from 'react-router'
 import SetupProgress from '../components/SetupProgress.jsx'
 import './SignupPage.css'
 import './CalendarConnectPage.css'
@@ -7,10 +7,19 @@ import './CalendarConnectPage.css'
 export default function CalendarConnectPage() {
   const navigate = useNavigate()
   const [message, setMessage] = useState('')
+  const [searchParams] = useSearchParams()
+  const fromProfile = searchParams.get('from') === 'profile'
 
   return (
     <div className="fit-setup">
-      <SetupProgress step={9} />
+      {fromProfile ? (
+        <div className="fit-setup__top">
+          <span>캘린더 연결</span>
+          <Link to="/profile">닫기</Link>
+        </div>
+      ) : (
+        <SetupProgress step={9} />
+      )}
 
       <div className="fit-connect">
         <section className="fit-connect__card" aria-labelledby="connect-title">
@@ -23,7 +32,7 @@ export default function CalendarConnectPage() {
           >
             캘린더 연동
           </button>
-          <button className="fit-connect__secondary" type="button" onClick={() => navigate('/plan/generate')}>
+          <button className="fit-connect__secondary" type="button" onClick={() => navigate(fromProfile ? '/profile' : '/plan/generate')}>
             나중에 할게요
           </button>
           <p className="fit-connect__message" role="status">{message}</p>

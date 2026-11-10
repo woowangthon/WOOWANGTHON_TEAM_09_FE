@@ -1,25 +1,27 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
 import ExerciseIcon from '../components/ExerciseIcon.jsx'
+import MissedWorkoutCard from '../components/MissedWorkoutCard.jsx'
 import FitNavigation from '../components/FitNavigation.jsx'
 import WorkoutWeek from '../components/WorkoutWeek.jsx'
 import { feedbackReasons, loadFeedback, saveFeedback } from '../feedback.js'
 import { getBusyPeriods, getFreeSlots, toTime } from '../freeTime.js'
 import {
   formatKoreanTime,
+  getDayLabel,
   getPlanSessions,
   loadPlan,
   loadRecords,
+  moveSession,
   readStorage,
   savePlan,
   saveSessionRecord,
   weekdays,
 } from '../workoutPlan.js'
-import { exampleRoutines } from '../workoutRoutines.js'
+import { exampleRoutines, getRoutineTitle } from '../workoutRoutines.js'
 import './HomePage.css'
 
 const dateFormat = new Intl.DateTimeFormat('ko-KR', { month: 'long', day: 'numeric', weekday: 'long' })
-const dayLetters = 'ABCDEFG'
 
 function startOfDay(date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate())
@@ -29,12 +31,6 @@ function greeting(hour) {
   if (hour >= 5 && hour < 12) return '좋은 아침이에요'
   if (hour >= 12 && hour < 18) return '좋은 오후예요'
   return '좋은 저녁이에요'
-}
-
-function partOfDay(minutes) {
-  if (minutes >= 18 * 60) return '저녁'
-  if (minutes >= 12 * 60) return '오후'
-  return '오전'
 }
 
 function loadApprovedPlan() {
@@ -85,7 +81,7 @@ function TodayCard({ plan, session, label, isToday, onRecordSaved }) {
 
   return (
     <div className="fit-home__card">
-      <h3>{label} - {session.title}</h3>
+      <h3>{label} - {getRoutineTitle(session)}</h3>
       <p className="fit-home__when">
         {isToday ? '오늘' : session.day} {formatKoreanTime(session.time)} · {session.duration}분
       </p>
@@ -130,52 +126,6 @@ function TodayCard({ plan, session, label, isToday, onRecordSaved }) {
   )
 }
 
-function MissedCard({ session, label, slots, onMove }) {
-  const [showOthers, setShowOthers] = useState(false)
-  const preferred = slots.find((slot) => slot >= 18 * 60) ?? slots[0]
-  const others = slots.filter((slot) => slot !== preferred).slice(0, 3)
-
-  return (
-    <div className="fit-home__card">
-      <h3>어제는 쉬어가셨네요,</h3>
-      {preferred === undefined ? (
-        <>
-          <p className="fit-home__desc">{label}({session.title})를 오늘 할 수 있는 빈 시간이 없어요.</p>
-          <Link className="fit-home__button" to="/schedule">캘린더에서 확인하기</Link>
-        </>
-      ) : (
-        <>
-          <p className="fit-home__desc">
-            {label}를 오늘 {partOfDay(preferred)}에 해볼까요?<br />캘린더에 비어 있는 시간이에요.
-          </p>
-          <button className="fit-home__button" type="button" onClick={() => onMove(preferred)}>
-            오늘 {formatKoreanTime(toTime(preferred))}에 하기
-          </button>
-          {others.length > 0 && (
-            <button
-              className="fit-home__button fit-home__button--dark"
-              type="button"
-              aria-expanded={showOthers}
-              onClick={() => setShowOthers((open) => !open)}
-            >
-              다른 시간 보기
-            </button>
-          )}
-          {showOthers && (
-            <div className="fit-home__slots" role="group" aria-label="다른 가능한 시간">
-              {others.map((slot) => (
-                <button key={slot} type="button" onClick={() => onMove(slot)}>
-                  {formatKoreanTime(toTime(slot))}
-                </button>
-              ))}
-            </div>
-          )}
-        </>
-      )}
-    </div>
-  )
-}
-
 function FeedbackCard({ onSubmit }) {
   const [reason, setReason] = useState('')
 
@@ -211,7 +161,7 @@ export default function HomePage() {
   const [message, setMessage] = useState('')
 
   const sessions = getPlanSessions(plan, records)
-  const labelOf = (session) => `Day ${dayLetters[plan.sessions.findIndex((item) => item.id === session.id)]}`
+  const labelOf = (session) => getDayLabel(plan, session.id)
   const todayStart = startOfDay(today)
   const yesterday = new Date(todayStart.getFullYear(), todayStart.getMonth(), todayStart.getDate() - 1)
   const approvedStart = plan ? startOfDay(new Date(plan.approvedAt)) : null
@@ -240,12 +190,7 @@ export default function HomePage() {
   const feedbackTarget = pastUnfinished.find(({ session }) => !feedback[`${plan.id}:${session.id}`])?.session
 
   function moveToToday(minutes) {
-    const updated = {
-      ...plan,
-      sessions: plan.sessions.map((session) =>
-        session.id === missed.id ? { ...session, day: `${weekdays[today.getDay()]}요일`, time: toTime(minutes) } : session
-      ),
-    }
+    const updated = moveSession(plan, missed.id, `${weekdays[today.getDay()]}요일`, toTime(minutes))
 
     try {
       savePlan(updated)
@@ -285,7 +230,9 @@ export default function HomePage() {
             <Link className="fit-home__button" to="/plan">운동 계획 확인하기</Link>
           </div>
         ) : missed ? (
-          <MissedCard session={missed} label={labelOf(missed)} slots={freeSlots} onMove={moveToToday} />
+          <div className="fit-home__card">
+            <MissedWorkoutCard title="어제는 쉬어가셨네요," session={missed} label={labelOf(missed)} slots={freeSlots} onMove={moveToToday} />
+          </div>
         ) : nextSession ? (
           <TodayCard
             key={`${nextSession.id}-${nextSession.day}`}

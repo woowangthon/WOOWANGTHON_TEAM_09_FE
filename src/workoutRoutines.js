@@ -1,3 +1,14 @@
+// 홈·캘린더 카드에 쓰는 루틴 이름 (Day A - 하체 중심 전신)
+export const routineTitles = {
+  'session-1': '상체 중심 전신',
+  'session-2': '하체 중심 전신',
+  'session-3': '전신 순환 운동',
+}
+
+export function getRoutineTitle(session) {
+  return routineTitles[session.id] ?? session.title
+}
+
 // AI 연결 전 화면 확인용 예시 루틴. icon은 ExerciseIcon의 종류예요.
 export const exampleRoutines = {
   'session-1': [

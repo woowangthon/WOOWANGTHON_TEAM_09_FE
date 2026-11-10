@@ -202,3 +202,16 @@ export function saveSessionRecord(planId, session, exercises) {
   localStorage.setItem(RECORDS_KEY, JSON.stringify({ ...loadRecords(), [`${planId}:${session.id}`]: record }))
   return record
 }
+
+// 계획 안 순서대로 Day A, Day B ...
+export function getDayLabel(plan, sessionId) {
+  const index = plan.sessions.findIndex((session) => session.id === sessionId)
+  return `Day ${String.fromCharCode(65 + Math.max(index, 0))}`
+}
+
+export function moveSession(plan, sessionId, day, time) {
+  return {
+    ...plan,
+    sessions: plan.sessions.map((session) => (session.id === sessionId ? { ...session, day, time } : session)),
+  }
+}

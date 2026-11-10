@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router'
+import { Link, useNavigate, useSearchParams } from 'react-router'
 import SetupProgress from '../components/SetupProgress.jsx'
 import UploadPanel from '../components/UploadPanel.jsx'
 import { useImageFile } from '../hooks/useImageFile.js'
@@ -7,12 +7,13 @@ import { loadInbody, saveInbody, todayText } from '../inbody.js'
 import './SignupPage.css'
 import './UploadSetup.css'
 
-const NEXT_PATH = '/setup/timetable'
-
 export default function InbodySetupPage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const fromProfile = searchParams.get('from') === 'profile'
+  const nextPath = fromProfile ? '/profile' : '/setup/timetable'
   const [form, setForm] = useState(loadInbody)
-  const [isFormOpen, setIsFormOpen] = useState(false)
+  const [isFormOpen, setIsFormOpen] = useState(() => fromProfile && Boolean(form.measuredAt))
   const [message, setMessage] = useState('')
   const firstFieldRef = useRef(null)
   const { image, inputRef, selectFile, clear } = useImageFile(setMessage)
@@ -44,12 +45,19 @@ export default function InbodySetupPage() {
       return
     }
 
-    navigate(NEXT_PATH)
+    navigate(nextPath)
   }
 
   return (
     <div className="fit-setup">
-      <SetupProgress step={7} />
+      {fromProfile ? (
+        <div className="fit-setup__top">
+          <span>인바디 정보 관리</span>
+          <Link to="/profile">닫기</Link>
+        </div>
+      ) : (
+        <SetupProgress step={7} />
+      )}
 
       <div className="fit-setup__screen fit-setup__screen--top">
         <h1>인바디 정보를<br />업로드 해주세요</h1>
@@ -64,7 +72,9 @@ export default function InbodySetupPage() {
           onToggleForm={() => setIsFormOpen((open) => !open)}
         />
 
-        <button className="fit-setup__skip" type="button" onClick={() => navigate(NEXT_PATH)}>다음에 할게요</button>
+        {!fromProfile && (
+          <button className="fit-setup__skip" type="button" onClick={() => navigate(nextPath)}>다음에 할게요</button>
+        )}
 
         {isFormOpen && (
           <form className="fit-setup__fields fit-setup__panel" onSubmit={submit}>
@@ -80,7 +90,7 @@ export default function InbodySetupPage() {
               측정일
               <input type="date" name="measuredAt" value={form.measuredAt} onChange={handleChange} max={todayText()} required />
             </label>
-            <button className="fit-setup__add" type="submit">저장하고 다음</button>
+            <button className="fit-setup__add" type="submit">{fromProfile ? '저장' : '저장하고 다음'}</button>
           </form>
         )}
 

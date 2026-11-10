@@ -1,0 +1,72 @@
+.fit-missed h3 {
+  margin: 0 0 8px;
+  color: inherit;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.fit-missed p {
+  margin: 0;
+  color: #c2c2bf;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.fit-missed .fit-missed__note {
+  margin-bottom: 6px;
+  color: #fafafa;
+  font-size: 13px;
+}
+
+.fit-missed__button {
+  display: grid;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 42px;
+  margin-top: 14px;
+  padding: 4px 12px;
+  place-items: center;
+  border: 0;
+  border-radius: 999px;
+  background: #fff0f5;
+  color: #7a1a3c;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.fit-missed__button + .fit-missed__button {
+  margin-top: 8px;
+}
+
+.fit-missed__button--dark {
+  background: #6e1d3c;
+  color: #fafafa;
+}
+
+.fit-missed__slots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.fit-missed__slots button {
+  flex: 1;
+  min-height: 38px;
+  padding: 4px 10px;
+  border: 1px solid #4a4a48;
+  border-radius: 999px;
+  background: #222221;
+  color: #fafafa;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.fit-missed :focus-visible {
+  outline: 2px solid #6bd2b6;
+  outline-offset: 3px;
+}
