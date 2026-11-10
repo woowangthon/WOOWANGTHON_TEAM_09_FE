@@ -1,0 +1,235 @@
+#root:has(.fit-home) {
+  width: 100%;
+  max-width: none;
+  border: 0;
+  background: #000;
+}
+
+.fit-home {
+  --home-panel: #252523;
+  --home-border: #454542;
+  --home-text: #fafafa;
+  --home-muted: #c2c2bf;
+  --home-mint: #6bd2b6;
+  --home-pink: #fff0f7;
+  --home-berry: #77223f;
+
+  box-sizing: border-box;
+  width: min(100%, 400px);
+  margin-inline: auto;
+  padding: 0 20px 104px;
+  color: var(--home-text);
+  color-scheme: dark;
+  font: 14px/1.45 system-ui, 'Malgun Gothic', sans-serif;
+  text-align: left;
+}
+
+.fit-home__overview {
+  box-sizing: border-box;
+  min-height: 100svh;
+  padding: max(68px, env(safe-area-inset-top)) 0 100px;
+}
+
+.fit-home__header {
+  margin-bottom: 42px;
+}
+
+.fit-home__header p {
+  color: var(--home-muted);
+  font-size: 13px;
+}
+
+.fit-home h1,
+.fit-home h2,
+.fit-home h3 {
+  margin: 0;
+  color: inherit;
+  font-family: inherit;
+  font-weight: 700;
+}
+
+.fit-home h1 {
+  margin-top: 5px;
+  font-size: clamp(25px, 7.2vw, 30px);
+  letter-spacing: -0.045em;
+  line-height: 1.2;
+}
+
+.fit-home h2 {
+  margin-bottom: 9px;
+  font-size: 19px;
+  line-height: 1.25;
+}
+
+.fit-home h3 {
+  margin-bottom: 8px;
+  font-size: 20px;
+}
+
+.fit-home__card,
+.fit-home__week-link {
+  border: 1px solid var(--home-border);
+  border-radius: 24px;
+  background: var(--home-panel);
+}
+
+.fit-home__card {
+  padding: 18px 22px 12px;
+}
+
+.fit-home__card p,
+.fit-home__routine {
+  color: var(--home-muted);
+}
+
+.fit-home__routine {
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fit-home__button {
+  display: grid;
+  min-height: 52px;
+  margin-top: 14px;
+  padding: 4px 12px;
+  box-sizing: border-box;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--home-pink);
+  color: var(--home-berry);
+  font-weight: 650;
+  text-align: center;
+  text-decoration: none;
+}
+
+.fit-home__week-link {
+  display: block;
+  margin-top: 12px;
+  padding: 10px 12px 12px;
+  color: var(--home-muted);
+  text-decoration: none;
+}
+
+.fit-home__week {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fit-home__week li {
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+  font-size: 12px;
+}
+
+.fit-home__dot {
+  box-sizing: border-box;
+  width: 20px;
+  height: 20px;
+  border: 1px solid transparent;
+  border-radius: 50%;
+  background: #707070;
+}
+
+.fit-home__dot[data-status='예정'] {
+  border-color: var(--home-mint);
+  background: transparent;
+}
+
+.fit-home__dot[data-status='부분 완료'] {
+  border-color: var(--home-mint);
+  background: linear-gradient(90deg, var(--home-mint) 50%, transparent 50%);
+}
+
+.fit-home__dot[data-status='완료'] {
+  background: var(--home-mint);
+}
+
+.fit-home__details {
+  display: grid;
+  gap: 14px;
+  padding-top: 16px;
+}
+
+.fit-home__details .fit-home__card {
+  padding-bottom: 18px;
+}
+
+.fit-home__details a {
+  display: inline-block;
+  margin-top: 8px;
+  color: var(--home-mint);
+}
+
+.fit-home__details progress {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  accent-color: var(--home-mint);
+}
+
+.fit-home__details ul {
+  padding-inline-start: 20px;
+}
+
+.fit-home__details button {
+  margin: 0 0 8px;
+  padding: 6px 10px;
+  border: 1px solid var(--home-border);
+  border-radius: 8px;
+  background: #171717;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.fit-home__nav {
+  position: fixed;
+  z-index: 1;
+  bottom: calc(22px + env(safe-area-inset-bottom));
+  left: 50%;
+  display: flex;
+  width: min(280px, calc(100% - 48px));
+  padding: 3px 6px;
+  box-sizing: border-box;
+  border: 1px solid #373735;
+  border-radius: 999px;
+  background: #191919;
+  transform: translateX(-50%);
+}
+
+.fit-home__nav a {
+  display: grid;
+  flex: 1;
+  min-height: 52px;
+  place-items: center;
+  border-radius: 999px;
+  color: #d7cfd3;
+}
+
+.fit-home__nav a[aria-current='page'] {
+  color: var(--home-text);
+}
+
+.fit-home__nav svg {
+  width: 26px;
+  height: 26px;
+}
+
+.fit-home :focus-visible {
+  outline: 2px solid var(--home-mint);
+  outline-offset: 3px;
+}
+
+.fit-home__sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

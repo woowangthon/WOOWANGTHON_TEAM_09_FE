@@ -1,4 +1,4 @@
-import { BrowserRouter, Link, Route, Routes } from 'react-router'
+import { BrowserRouter, Link, Route, Routes, useMatch } from 'react-router'
 
 import HomePage from './pages/HomePage'
 import SignupPage from './pages/SignupPage'
@@ -7,19 +7,29 @@ import WorkoutPage from './pages/WorkoutPage'
 import SchedulePage from './pages/SchedulePage'
 import ProfilePage from './pages/ProfilePage'
 
+function PageNavigation() {
+  const isHome = useMatch({ path: '/', end: true })
+
+  if (isHome) return null
+
+  return (
+    <nav aria-label="주요 메뉴">
+      <ul>
+        <li><Link to="/">홈</Link></li>
+        <li><Link to="/signup">회원가입</Link></li>
+        <li><Link to="/plan">운동 계획</Link></li>
+        <li><Link to="/workout">운동</Link></li>
+        <li><Link to="/schedule">일정</Link></li>
+        <li><Link to="/profile">프로필</Link></li>
+      </ul>
+    </nav>
+  )
+}
+
 export default function App() {
   return (
     <BrowserRouter>
-      <nav aria-label="주요 메뉴">
-        <ul>
-          <li><Link to="/">홈</Link></li>
-          <li><Link to="/signup">회원가입</Link></li>
-          <li><Link to="/plan">운동 계획</Link></li>
-          <li><Link to="/workout">운동</Link></li>
-          <li><Link to="/schedule">일정</Link></li>
-          <li><Link to="/profile">프로필</Link></li>
-        </ul>
-      </nav>
+      <PageNavigation />
 
       <main>
         <Routes>
