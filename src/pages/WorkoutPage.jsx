@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { exampleRoutines } from '../workoutRoutines.js'
+import FitNavigation from '../components/FitNavigation.jsx'
+import './WorkoutPage.css'
 
 const RECORDS_KEY = 'demo-session-records'
 
@@ -129,35 +131,45 @@ function WorkoutSession({ planId, session }) {
   }
 
   return (
-    <section>
-      <h2>{session.title}</h2>
-      <p>
-        {session.day} {session.time} · {session.duration}분
-      </p>
-      <p>동작 확인용 예시 루틴입니다.</p>
-      <p>완료: {completedCount} / {exercises.length}개</p>
+    <section aria-labelledby="workout-session-title">
+      <div className="fit-workout__card fit-workout__overview">
+        <p>{session.day} {session.time} · {session.duration}분</p>
+        <h2 id="workout-session-title">{session.title}</h2>
+        <div className="fit-workout__progress">
+          <label htmlFor="workout-progress">완료한 종목</label>
+          <strong>{completedCount} / {exercises.length}</strong>
+        </div>
+        <progress id="workout-progress" value={completedCount} max={exercises.length} />
+      </div>
 
-      <ul>
-        {exercises.map((exercise) => (
+      <h3 className="fit-workout__list-title">운동 종목</h3>
+      <ul className="fit-workout__exercises">
+        {exercises.map((exercise, index) => (
           <li key={exercise.id}>
-            <label>
+            <label className="fit-workout__card fit-workout__exercise" data-completed={exercise.completed}>
+              <span className="fit-workout__number" aria-hidden="true">
+                {String(index + 1).padStart(2, '0')}
+              </span>
+              <span className="fit-workout__exercise-info">
+                <strong>{exercise.name}</strong>
+                <small>{exercise.sets}세트 × {exercise.reps}회</small>
+              </span>
               <input
                 type="checkbox"
                 checked={exercise.completed}
                 onChange={() => toggleExercise(exercise.id)}
               />
-              {exercise.name} — {exercise.sets}세트 × {exercise.reps}회
             </label>
           </li>
         ))}
       </ul>
 
-      <button type="button" onClick={saveWorkout}>
+      <button className="fit-workout__action" type="button" onClick={saveWorkout}>
         운동 종료 및 저장
       </button>
 
-      <p role="status">{message}</p>
-      <p>다른 운동으로 이동하기 전에 저장해 주세요.</p>
+      <p className="fit-workout__message" role="status">{message}</p>
+      <p className="fit-workout__note">다른 운동으로 이동하기 전에 저장해 주세요.</p>
     </section>
   )
 }
@@ -166,45 +178,45 @@ export default function WorkoutPage() {
   const [plan] = useState(loadPlan)
   const [searchParams, setSearchParams] = useSearchParams()
 
-  if (!plan) {
-    return (
-      <section>
-        <h1>운동</h1>
-        <p>먼저 운동 계획을 확인하고 승인해 주세요.</p>
-        <Link to="/plan">운동 계획 확인하기</Link>
-      </section>
-    )
-  }
-
-  const selectedSession = plan.sessions.find(
+  const selectedSession = plan?.sessions.find(
     (session) => session.id === searchParams.get('session')
-  ) ?? plan.sessions[0]
+  ) ?? plan?.sessions[0]
 
   return (
-    <section>
-      <h1>운동</h1>
+    <div className="fit-workout">
+      <h1>운동 기록</h1>
 
-      <label>
-        운동 선택{' '}
-        <select
-          value={selectedSession.id}
-          onChange={(event) => setSearchParams({ session: event.target.value }, { replace: true })}
-        >
-          {plan.sessions.map((session) => (
-            <option key={session.id} value={session.id}>
-              {session.day} · {session.title}
-            </option>
-          ))}
-        </select>
-      </label>
+      {selectedSession ? (
+        <>
+          <label className="fit-workout__select">
+            운동 선택
+            <select
+              value={selectedSession.id}
+              onChange={(event) => setSearchParams({ session: event.target.value }, { replace: true })}
+            >
+              {plan.sessions.map((session) => (
+                <option key={session.id} value={session.id}>
+                  {session.day} · {session.title}
+                </option>
+              ))}
+            </select>
+          </label>
 
-      {selectedSession && (
-        <WorkoutSession
-          key={`${plan.id}:${selectedSession.id}`}
-          planId={plan.id}
-          session={selectedSession}
-        />
+          <WorkoutSession
+            key={`${plan.id}:${selectedSession.id}`}
+            planId={plan.id}
+            session={selectedSession}
+          />
+        </>
+      ) : (
+        <section className="fit-workout__card fit-workout__overview">
+          <h2>승인한 운동 계획이 없어요</h2>
+          <p>먼저 운동 계획을 확인하고 승인해 주세요.</p>
+          <Link className="fit-workout__action" to="/plan">운동 계획 확인하기</Link>
+        </section>
       )}
-    </section>
+
+      <FitNavigation />
+    </div>
   )
 }

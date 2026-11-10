@@ -14,7 +14,9 @@ function PageNavigation() {
 
   const isProfile = useMatch({ path: '/profile', end: true })
 
-  if (isHome || isSchedule || isProfile) return null
+  const isWorkout = useMatch({ path: '/workout', end: true })
+
+  if (isHome || isSchedule || isProfile || isWorkout) return null
 
   return (
     <nav aria-label="주요 메뉴">
