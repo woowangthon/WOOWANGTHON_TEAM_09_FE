@@ -188,6 +188,20 @@
   font-size: 18px;
 }
 
+.fit-profile__logout {
+  display: block;
+  min-height: 40px;
+  margin: 28px auto 0;
+  padding: 6px 16px;
+  border: 0;
+  background: none;
+  color: var(--profile-muted);
+  font: inherit;
+  font-size: 12px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 .fit-profile :focus-visible {
   outline: 2px solid var(--profile-mint);
   outline-offset: 2px;

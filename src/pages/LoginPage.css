@@ -1,0 +1,57 @@
+.fit-login {
+  padding-top: clamp(56px, 14vh, 120px);
+}
+
+.fit-login__brand {
+  margin: 0 0 10px;
+  color: var(--setup-mint);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.fit-login__sub {
+  margin: 8px 0 0;
+  color: var(--setup-muted);
+  font-size: 13px;
+}
+
+.fit-login__fields {
+  display: grid;
+  width: 100%;
+  gap: 12px;
+  margin-top: 40px;
+  text-align: left;
+}
+
+.fit-login__fields label {
+  display: grid;
+  gap: 6px;
+}
+
+.fit-login__fields span {
+  padding-left: 6px;
+  color: var(--setup-muted);
+  font-size: 12px;
+}
+
+.fit-login__fields input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 48px;
+  padding: 8px 18px;
+  border: 1.5px solid var(--setup-border);
+  border-radius: 999px;
+  background: transparent;
+  color: #fafafa;
+  font: inherit;
+  font-size: 16px;
+}
+
+.fit-login__fields input:focus {
+  border-color: var(--setup-mint);
+  outline: none;
+}
+
+.fit-login .fit-setup__options {
+  margin-top: 28px;
+}

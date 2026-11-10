@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Link } from 'react-router'
+import { Link, useNavigate } from 'react-router'
+import { logout } from '../api/auth.js'
 import FitNavigation from '../components/FitNavigation.jsx'
 import { loadInbody } from '../inbody.js'
 import { loadTimetable } from '../timetable.js'
@@ -69,6 +70,23 @@ function RowLink({ to, title, detail }) {
   )
 }
 
+function LogoutButton() {
+  const navigate = useNavigate()
+
+  return (
+    <button
+      className="fit-profile__logout"
+      type="button"
+      onClick={() => {
+        logout()
+        navigate('/login', { replace: true })
+      }}
+    >
+      로그아웃
+    </button>
+  )
+}
+
 export default function ProfilePage() {
   const [profile] = useState(loadProfile)
   const [inbody] = useState(loadInbody)
@@ -85,6 +103,7 @@ export default function ProfilePage() {
           </div>
         </section>
         <Link className="fit-profile__start" to="/signup">프로필 만들기</Link>
+        <LogoutButton />
         <FitNavigation />
       </div>
     )
@@ -137,6 +156,8 @@ export default function ProfilePage() {
         />
         <RowLink to="/setup/calendar?from=profile" title="Google 캘린더" detail="연결 안 됨" />
       </section>
+
+      <LogoutButton />
 
       <FitNavigation />
     </div>

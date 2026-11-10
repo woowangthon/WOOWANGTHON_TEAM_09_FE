@@ -1,6 +1,8 @@
-import { BrowserRouter, Link, Route, Routes, useMatch } from 'react-router'
+import { BrowserRouter, Navigate, Outlet, Route, Routes } from 'react-router'
 
+import { getToken } from './api/client.js'
 import HomePage from './pages/HomePage'
+import LoginPage from './pages/LoginPage'
 import SignupPage from './pages/SignupPage'
 import PlanPage from './pages/PlanPage'
 import PlanGeneratePage from './pages/PlanGeneratePage'
@@ -13,62 +15,32 @@ import SchedulePage from './pages/SchedulePage'
 import ProfilePage from './pages/ProfilePage'
 import ReportPage from './pages/ReportPage'
 
-function PageNavigation() {
-  const isHome = useMatch({ path: '/', end: true })
-
-  const isSchedule = useMatch({ path: '/schedule', end: true })
-
-  const isProfile = useMatch({ path: '/profile', end: true })
-
-  const isWorkout = useMatch({ path: '/workout', end: true })
-
-  const isPlan = useMatch({ path: '/plan/*' })
-
-  const isSignup = useMatch({ path: '/signup', end: true })
-
-  const isReport = useMatch({ path: '/report', end: true })
-
-  const isSetup = useMatch({ path: '/setup/*' })
-
-  if (isHome || isSchedule || isProfile || isWorkout || isPlan || isSignup || isReport || isSetup) return null
-
-  return (
-    <nav aria-label="주요 메뉴">
-      <ul>
-        <li><Link to="/">홈</Link></li>
-        <li><Link to="/signup">회원가입</Link></li>
-        <li><Link to="/plan">운동 계획</Link></li>
-        <li><Link to="/workout">운동</Link></li>
-        <li><Link to="/schedule">일정</Link></li>
-        <li><Link to="/profile">프로필</Link></li>
-      </ul>
-    </nav>
-  )
+// 로그인하지 않았으면 로그인 화면으로 보내요.
+function RequireAuth() {
+  return getToken() ? <Outlet /> : <Navigate to="/login" replace />
 }
 
 export default function App() {
   return (
     <BrowserRouter>
-      <PageNavigation />
-
       <main>
         <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/signup" element={<SignupPage />} />
-          <Route path="/plan" element={<PlanPage />} />
-          <Route path="/plan/generate" element={<PlanGeneratePage />} />
-          <Route path="/plan/:sessionId" element={<PlanDetailPage />} />
-          <Route path="/setup/inbody" element={<InbodySetupPage />} />
-          <Route path="/setup/timetable" element={<TimetablePage />} />
-          <Route path="/setup/calendar" element={<CalendarConnectPage />} />
-          <Route path="/workout" element={<WorkoutPage />} />
-          <Route path="/schedule" element={<SchedulePage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/report" element={<ReportPage />} />
-          <Route
-            path="*"
-            element={<h1>페이지를 찾을 수 없어요</h1>}
-          />
+          <Route path="/login" element={<LoginPage />} />
+          <Route element={<RequireAuth />}>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/signup" element={<SignupPage />} />
+            <Route path="/plan" element={<PlanPage />} />
+            <Route path="/plan/generate" element={<PlanGeneratePage />} />
+            <Route path="/plan/:sessionId" element={<PlanDetailPage />} />
+            <Route path="/setup/inbody" element={<InbodySetupPage />} />
+            <Route path="/setup/timetable" element={<TimetablePage />} />
+            <Route path="/setup/calendar" element={<CalendarConnectPage />} />
+            <Route path="/workout" element={<WorkoutPage />} />
+            <Route path="/schedule" element={<SchedulePage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/report" element={<ReportPage />} />
+          </Route>
+          <Route path="*" element={<h1>페이지를 찾을 수 없어요</h1>} />
         </Routes>
       </main>
     </BrowserRouter>
