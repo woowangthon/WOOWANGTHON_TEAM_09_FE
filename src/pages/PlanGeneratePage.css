@@ -73,3 +73,35 @@
     animation-duration: 3s;
   }
 }
+
+.fit-generate__wait {
+  margin: 14px 0 0;
+  color: #6f6f6c;
+  font-size: 11px;
+}
+
+.fit-generate__actions {
+  display: grid;
+  width: min(100%, 260px);
+  gap: 8px;
+  margin-top: 48px;
+}
+
+.fit-generate__actions button,
+.fit-generate__actions a {
+  display: grid;
+  min-height: 46px;
+  place-items: center;
+  border: 0;
+  border-radius: 999px;
+  background: #b8245a;
+  color: #fafafa;
+  font: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.fit-generate__actions a {
+  background: #2a2a29;
+}

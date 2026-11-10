@@ -1,14 +1,19 @@
-import { weekdays } from '../workoutPlan.js'
+import { addDays, dateKey, weekdays, weekRange } from '../workoutPlan.js'
 import './WorkoutWeek.css'
 
-// pastDays: 이번 주에서 이미 지나간 요일 수. 지난 날의 기록 없는 운동은 미수행으로 보여줘요.
-export default function WorkoutWeek({ sessions, pastDays = 0 }) {
+// 이번 주 월~일 운동 상태 점. sessions는 날짜(date)가 있는 운동 일정이에요.
+export default function WorkoutWeek({ sessions, today = new Date() }) {
+  const { start } = weekRange(today)
+
   return (
     <ul className="fit-week" aria-label="요일별 운동 상태">
-      {weekdays.map((day, index) => {
-        const session = sessions.find((item) => item.day === `${day}요일`)
-        const recorded = session?.status ?? '일정 없음'
-        const status = index < pastDays && recorded === '기록 없음' ? '미수행' : recorded
+      {Array.from({ length: 7 }, (_, index) => {
+        const date = addDays(start, index)
+        const day = weekdays[date.getDay()]
+        const daySessions = sessions.filter((session) => session.date === dateKey(date))
+        const status = daySessions.length === 0
+          ? '일정 없음'
+          : daySessions.find((session) => session.status !== '완료')?.status ?? '완료'
 
         return (
           <li key={day}>

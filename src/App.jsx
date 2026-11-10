@@ -10,7 +10,6 @@ import PlanDetailPage from './pages/PlanDetailPage'
 import TimetablePage from './pages/TimetablePage'
 import InbodySetupPage from './pages/InbodySetupPage'
 import CalendarConnectPage from './pages/CalendarConnectPage'
-import WorkoutPage from './pages/WorkoutPage'
 import SchedulePage from './pages/SchedulePage'
 import ProfilePage from './pages/ProfilePage'
 import ReportPage from './pages/ReportPage'
@@ -35,7 +34,6 @@ export default function App() {
             <Route path="/setup/inbody" element={<InbodySetupPage />} />
             <Route path="/setup/timetable" element={<TimetablePage />} />
             <Route path="/setup/calendar" element={<CalendarConnectPage />} />
-            <Route path="/workout" element={<WorkoutPage />} />
             <Route path="/schedule" element={<SchedulePage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/report" element={<ReportPage />} />

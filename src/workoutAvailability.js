@@ -56,17 +56,6 @@ export function getUnavailableSegments(period) {
     : [{ startTime: period.startTime, endTime: period.endTime }]
 }
 
-export function withUnavailablePeriod(schedules, period) {
-  return [
-    ...schedules,
-    ...getUnavailableSegments(period).map((segment, index) => ({
-      ...segment,
-      id: `unavailable-${index}`,
-      title: '운동하기 어려운 시간',
-      isUnavailable: true,
-    })),
-  ]
-}
 
 export function loadUnavailablePeriod() {
   return getUnavailablePeriod(readStorage('demo-profile', null)?.unavailablePeriod)

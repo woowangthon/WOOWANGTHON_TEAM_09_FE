@@ -15,8 +15,9 @@ export function loadFeedback() {
   return saved && typeof saved === 'object' && !Array.isArray(saved) ? saved : {}
 }
 
-export function saveFeedback(planId, sessionId, reason) {
-  const next = { ...loadFeedback(), [`${planId}:${sessionId}`]: { reason, savedAt: new Date().toISOString() } }
+// 서버에 피드백 API가 없어서 이 기기에 운동 일정 id별로 저장해요.
+export function saveFeedback(sessionId, reason) {
+  const next = { ...loadFeedback(), [sessionId]: { reason, savedAt: new Date().toISOString() } }
   localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
   return next
 }

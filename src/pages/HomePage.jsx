@@ -1,31 +1,18 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
+import { dayLabel, loadWeek } from '../api/plan.js'
+import { conflictMessage, replaceSchedule, setExerciseCompleted } from '../api/schedule.js'
 import ExerciseIcon from '../components/ExerciseIcon.jsx'
-import MissedWorkoutCard from '../components/MissedWorkoutCard.jsx'
 import FitNavigation from '../components/FitNavigation.jsx'
+import MissedWorkoutCard from '../components/MissedWorkoutCard.jsx'
 import WorkoutWeek from '../components/WorkoutWeek.jsx'
 import { feedbackReasons, loadFeedback, saveFeedback } from '../feedback.js'
 import { getBusyPeriods, getFreeSlots, toTime } from '../freeTime.js'
-import {
-  formatKoreanTime,
-  getDayLabel,
-  getPlanSessions,
-  loadPlan,
-  loadRecords,
-  moveSession,
-  readStorage,
-  savePlan,
-  saveSessionRecord,
-  weekdays,
-} from '../workoutPlan.js'
-import { exampleRoutines, getRoutineTitle } from '../workoutRoutines.js'
+import { useAsync } from '../hooks/useAsync.js'
+import { addDays, dateKey, formatKoreanTime, readStorage } from '../workoutPlan.js'
 import './HomePage.css'
 
 const dateFormat = new Intl.DateTimeFormat('ko-KR', { month: 'long', day: 'numeric', weekday: 'long' })
-
-function startOfDay(date) {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate())
-}
 
 function greeting(hour) {
   if (hour >= 5 && hour < 12) return '좋은 아침이에요'
@@ -33,59 +20,48 @@ function greeting(hour) {
   return '좋은 저녁이에요'
 }
 
-function loadApprovedPlan() {
-  const plan = loadPlan()
-  return typeof plan?.approvedAt === 'string' ? plan : null
+function sessionStatus(exercises) {
+  const completedCount = exercises.filter((exercise) => exercise.completed).length
+  if (exercises.length > 0 && completedCount === exercises.length) return { completedCount, status: '완료' }
+  return { completedCount, status: completedCount > 0 ? '부분 완료' : '기록 없음' }
 }
 
-// 이번 주에서 그 운동이 있는 날짜
-function sessionDate(session, today) {
-  const index = weekdays.findIndex((day) => `${day}요일` === session.day)
-  return new Date(today.getFullYear(), today.getMonth(), today.getDate() - today.getDay() + index)
-}
-
-function exerciseLine(exercise) {
-  return `${exercise.name} ${exercise.sets}세트 x ${exercise.reps}`
-}
-
-function RoutineSummary({ routine }) {
+function RoutineSummary({ exercises }) {
   return (
     <p className="fit-home__summary">
-      {routine.slice(0, 2).map((exercise) => <span key={exercise.id}>{exerciseLine(exercise)}</span>)}
-      {routine.length > 2 && <span>외 {routine.length - 2}개</span>}
+      {exercises.slice(0, 2).map((exercise) => <span key={exercise.id}>{exercise.name} {exercise.detail}</span>)}
+      {exercises.length > 2 && <span>외 {exercises.length - 2}개</span>}
     </p>
   )
 }
 
-function TodayCard({ plan, session, label, isToday, onRecordSaved }) {
-  const routine = exampleRoutines[session.id] ?? []
+function TodayCard({ session, label, isToday, onExerciseChange }) {
   const [isOpen, setIsOpen] = useState(false)
-  const [completedIds, setCompletedIds] = useState(() => session.record?.completedIds ?? [])
+  const [savingId, setSavingId] = useState(null)
   const [message, setMessage] = useState('')
+  const total = session.exercises.length
 
-  function toggle(exercise) {
-    const nextIds = completedIds.includes(exercise.id)
-      ? completedIds.filter((id) => id !== exercise.id)
-      : [...completedIds, exercise.id]
-    const exercises = routine.map((item) => ({ ...item, completed: nextIds.includes(item.id) }))
-
+  async function toggle(exercise) {
+    setSavingId(exercise.id)
     try {
-      saveSessionRecord(plan.id, session, exercises)
-      setCompletedIds(nextIds)
-      setMessage(nextIds.length === routine.length ? '오늘 운동을 모두 완료했어요!' : `${nextIds.length}/${routine.length} 종목 완료`)
-      onRecordSaved()
-    } catch {
-      setMessage('기록을 저장하지 못했어요. 다시 시도해 주세요.')
+      await setExerciseCompleted(exercise.id, !exercise.completed)
+      const done = session.completedCount + (exercise.completed ? -1 : 1)
+      onExerciseChange(session.id, exercise.id, !exercise.completed)
+      setMessage(done === total ? '오늘 운동을 모두 완료했어요!' : `${done}/${total} 종목 완료`)
+    } catch (error) {
+      setMessage(error.message)
+    } finally {
+      setSavingId(null)
     }
   }
 
   return (
     <div className="fit-home__card">
-      <h3>{label} - {getRoutineTitle(session)}</h3>
+      <h3>{label} - {session.title}</h3>
       <p className="fit-home__when">
         {isToday ? '오늘' : session.day} {formatKoreanTime(session.time)} · {session.duration}분
       </p>
-      <RoutineSummary routine={routine} />
+      <RoutineSummary exercises={session.exercises} />
 
       {isToday ? (
         <button
@@ -102,22 +78,24 @@ function TodayCard({ plan, session, label, isToday, onRecordSaved }) {
 
       {isOpen && (
         <ul className="fit-home__exercises" aria-label="운동 종목 체크">
-          {routine.map((exercise) => {
-            const done = completedIds.includes(exercise.id)
-
-            return (
-              <li key={exercise.id}>
-                <button type="button" className="fit-home__exercise" aria-pressed={done} onClick={() => toggle(exercise)}>
-                  <ExerciseIcon type={exercise.icon} />
-                  <span>
-                    <strong>{exercise.name}</strong>
-                    <small>{exercise.part} · {exercise.sets}세트 x {exercise.reps}회</small>
-                  </span>
-                  <span className="fit-home__check" aria-hidden="true" />
-                </button>
-              </li>
-            )
-          })}
+          {session.exercises.map((exercise) => (
+            <li key={exercise.id}>
+              <button
+                type="button"
+                className="fit-home__exercise"
+                aria-pressed={exercise.completed}
+                disabled={savingId === exercise.id}
+                onClick={() => toggle(exercise)}
+              >
+                <ExerciseIcon name={exercise.name} />
+                <span>
+                  <strong>{exercise.name}</strong>
+                  <small>{exercise.detail}</small>
+                </span>
+                <span className="fit-home__check" aria-hidden="true" />
+              </button>
+            </li>
+          ))}
         </ul>
       )}
 
@@ -153,61 +131,113 @@ function FeedbackCard({ onSubmit }) {
 
 export default function HomePage() {
   const [today] = useState(() => new Date())
-  const [plan, setPlan] = useState(loadApprovedPlan)
-  const [records, setRecords] = useState(loadRecords)
+  const { data, error, loading, reload, setData } = useAsync(() => loadWeek(today), [today])
   const [feedback, setFeedback] = useState(loadFeedback)
-  const [submittedKey, setSubmittedKey] = useState('')
+  const [submittedId, setSubmittedId] = useState(null)
   const [name] = useState(() => readStorage('demo-profile', null)?.name?.trim() ?? '')
   const [message, setMessage] = useState('')
 
-  const sessions = getPlanSessions(plan, records)
-  const labelOf = (session) => getDayLabel(plan, session.id)
-  const todayStart = startOfDay(today)
-  const yesterday = new Date(todayStart.getFullYear(), todayStart.getMonth(), todayStart.getDate() - 1)
-  const approvedStart = plan ? startOfDay(new Date(plan.approvedAt)) : null
+  const sessions = data?.sessions ?? []
+  const life = data?.life ?? []
+  const todayKey = dateKey(today)
+  const yesterdayKey = dateKey(addDays(today, -1))
 
-  // 승인 이후 이번 주에 지나간 운동 중 완료하지 못한 것
-  const pastUnfinished = sessions
-    .map((session) => ({ session, date: sessionDate(session, today) }))
-    .filter(({ session, date }) => date < todayStart && date >= approvedStart && session.status !== '완료')
-    .sort((a, b) => b.date - a.date)
-
-  const todaySession = sessions.find((session) => session.day === `${weekdays[today.getDay()]}요일`)
-  const nextSession = todaySession ?? [1, 2, 3, 4, 5, 6]
-    .map((offset) => sessions.find((session) => session.day === `${weekdays[(today.getDay() + offset) % 7]}요일`))
-    .find(Boolean)
-
+  const todaySessions = sessions.filter((session) => session.date === todayKey)
+  const todaySession = todaySessions.find((session) => session.status !== '완료') ?? todaySessions[0]
+  const nextSession = todaySession ?? sessions.find((session) => session.date > todayKey)
   const missed = !todaySession
-    ? pastUnfinished.find(({ session, date }) =>
-        date.getTime() === yesterday.getTime() && ['기록 없음', '미수행'].includes(session.status)
-      )?.session
+    ? sessions.find((session) => session.date === yesterdayKey && session.status === '미수행')
     : null
+  const feedbackTarget = [...sessions]
+    .reverse()
+    .find((session) => session.date < todayKey && session.status !== '완료' && !feedback[session.id])
 
+  // 오늘 빈 시간: 어려운 시간 · 수업 · 오늘 일정을 피해요.
+  const todayPeriods = [
+    ...life
+      .filter((item) => item.start_term.startsWith(todayKey))
+      .map((item) => ({ startTime: item.start_term.slice(11, 16), endTime: item.end_term.slice(11, 16) })),
+    ...todaySessions.map((session) => ({ startTime: session.time, endTime: session.endTime })),
+  ]
   const freeSlots = missed
-    ? getFreeSlots(getBusyPeriods(today), missed.duration, today.getHours() * 60 + today.getMinutes() + 30)
+    ? getFreeSlots(getBusyPeriods(today, todayPeriods), missed.duration, today.getHours() * 60 + today.getMinutes() + 30)
     : []
 
-  const feedbackTarget = pastUnfinished.find(({ session }) => !feedback[`${plan.id}:${session.id}`])?.session
+  function updateExercise(sessionId, exerciseId, completed) {
+    setData((previous) => ({
+      ...previous,
+      sessions: previous.sessions.map((session) => {
+        if (session.id !== sessionId) return session
+        const exercises = session.exercises.map((exercise) => (exercise.id === exerciseId ? { ...exercise, completed } : exercise))
+        return { ...session, exercises, ...sessionStatus(exercises) }
+      }),
+    }))
+  }
 
-  function moveToToday(minutes) {
-    const updated = moveSession(plan, missed.id, `${weekdays[today.getDay()]}요일`, toTime(minutes))
+  async function moveToToday(minutes) {
+    const start = toTime(minutes)
+    const end = toTime(minutes + missed.duration)
 
     try {
-      savePlan(updated)
-      setPlan(updated)
-      setMessage(`${labelOf(missed)}를 오늘 ${formatKoreanTime(toTime(minutes))}로 옮겼어요.`)
-    } catch {
-      setMessage('운동 시간을 바꾸지 못했어요. 다시 시도해 주세요.')
+      await replaceSchedule(missed.id, { name: missed.name, start_term: `${todayKey}T${start}`, end_term: `${todayKey}T${end}` })
+      setMessage(`${dayLabel(sessions, missed.id)}를 오늘 ${formatKoreanTime(start)}로 옮겼어요.`)
+      reload()
+    } catch (caught) {
+      setMessage(caught.status === 409 ? conflictMessage(caught) : caught.message)
     }
   }
 
   function submitFeedback(reason) {
     try {
-      setFeedback(saveFeedback(plan.id, feedbackTarget.id, reason))
-      setSubmittedKey(feedbackTarget.id)
+      setFeedback(saveFeedback(feedbackTarget.id, reason))
+      setSubmittedId(feedbackTarget.id)
     } catch {
       setMessage('피드백을 저장하지 못했어요. 다시 시도해 주세요.')
     }
+  }
+
+  let todayCard
+  if (loading && !data) {
+    todayCard = <div className="fit-home__card"><p className="fit-home__desc" role="status">운동 계획을 불러오는 중이에요...</p></div>
+  } else if (error) {
+    todayCard = (
+      <div className="fit-home__card">
+        <p className="fit-home__desc" role="alert">{error.message}</p>
+        <button className="fit-home__button" type="button" onClick={reload}>다시 불러오기</button>
+      </div>
+    )
+  } else if (sessions.length === 0) {
+    todayCard = (
+      <div className="fit-home__card">
+        <h3>이번 주 운동 계획이 없어요</h3>
+        <p className="fit-home__desc">AI가 캠퍼스 일정에 맞춰 이번 주 운동을 짜 드려요.</p>
+        <Link className="fit-home__button" to="/plan/generate">맞춤 계획 만들기</Link>
+      </div>
+    )
+  } else if (missed) {
+    todayCard = (
+      <div className="fit-home__card">
+        <MissedWorkoutCard title="어제는 쉬어가셨네요," session={missed} label={dayLabel(sessions, missed.id)} slots={freeSlots} onMove={moveToToday} />
+      </div>
+    )
+  } else if (nextSession) {
+    todayCard = (
+      <TodayCard
+        key={nextSession.id}
+        session={nextSession}
+        label={dayLabel(sessions, nextSession.id)}
+        isToday={nextSession.date === todayKey}
+        onExerciseChange={updateExercise}
+      />
+    )
+  } else {
+    todayCard = (
+      <div className="fit-home__card">
+        <h3>이번 주 운동을 모두 마쳤어요</h3>
+        <p className="fit-home__desc">다음 주 계획은 리포트에서 만들 수 있어요.</p>
+        <Link className="fit-home__button" to="/report">리포트 보기</Link>
+      </div>
+    )
   }
 
   return (
@@ -221,43 +251,20 @@ export default function HomePage() {
       </header>
 
       <section aria-labelledby="today-plan">
-        <h2 id="today-plan">{missed || todaySession || !nextSession ? "Today's Plan" : 'Next Plan'}</h2>
-
-        {!plan ? (
-          <div className="fit-home__card">
-            <h3>시작한 운동 계획이 없어요</h3>
-            <p className="fit-home__desc">맞춤 운동 계획을 확인하고 시작해 보세요.</p>
-            <Link className="fit-home__button" to="/plan">운동 계획 확인하기</Link>
-          </div>
-        ) : missed ? (
-          <div className="fit-home__card">
-            <MissedWorkoutCard title="어제는 쉬어가셨네요," session={missed} label={labelOf(missed)} slots={freeSlots} onMove={moveToToday} />
-          </div>
-        ) : nextSession ? (
-          <TodayCard
-            key={`${nextSession.id}-${nextSession.day}`}
-            plan={plan}
-            session={nextSession}
-            label={labelOf(nextSession)}
-            isToday={nextSession === todaySession}
-            onRecordSaved={() => setRecords(loadRecords())}
-          />
-        ) : null}
-
+        <h2 id="today-plan">{todaySession || missed || !nextSession ? "Today's Plan" : 'Next Plan'}</h2>
+        {todayCard}
         <p className="fit-home__status" role="status">{message}</p>
       </section>
 
-      {plan && (
+      {sessions.length > 0 && (
         <Link className="fit-home__week" to="/report" aria-label="주간 운동 리포트 보기">
-          <WorkoutWeek sessions={sessions} pastDays={today.getDay()} />
+          <WorkoutWeek sessions={sessions} today={today} />
         </Link>
       )}
 
-      {plan && feedbackTarget && !submittedKey && (
-        <FeedbackCard key={feedbackTarget.id} onSubmit={submitFeedback} />
-      )}
+      {feedbackTarget && !submittedId && <FeedbackCard key={feedbackTarget.id} onSubmit={submitFeedback} />}
 
-      {submittedKey && (
+      {submittedId && (
         <div className="fit-home__card fit-home__feedback">
           <p className="fit-home__feedback-title">계획한 운동을 모두 완료하지 못한<br />이유가 있나요?</p>
           <p className="fit-home__done" role="status">피드백 완료</p>

@@ -1,9 +1,8 @@
-import { useState } from 'react'
 import { Link, useParams } from 'react-router'
+import { loadSession } from '../api/plan.js'
 import ExerciseIcon from '../components/ExerciseIcon.jsx'
-import { loadCurrentPlan } from '../planDraft.js'
+import { useAsync } from '../hooks/useAsync.js'
 import { readStorage } from '../workoutPlan.js'
-import { exampleRoutines } from '../workoutRoutines.js'
 import './PlanPage.css'
 
 const levelLabels = {
@@ -14,43 +13,38 @@ const levelLabels = {
 
 export default function PlanDetailPage() {
   const { sessionId } = useParams()
-  const [{ plan }] = useState(loadCurrentPlan)
-  const [level] = useState(() => levelLabels[readStorage('demo-profile', null)?.experience] ?? '기본 루틴')
-
-  const session = plan.sessions.find((item) => item.id === sessionId)
-  const routine = exampleRoutines[sessionId] ?? []
-
-  if (!session) {
-    return (
-      <div className="fit-plan">
-        <Link className="fit-plan__back" to="/plan">‹ 이번 주 운동 계획</Link>
-        <h1>운동을 찾을 수 없어요</h1>
-      </div>
-    )
-  }
+  const { data: session, error, loading } = useAsync(() => loadSession(sessionId), [sessionId])
+  const level = levelLabels[readStorage('demo-profile', null)?.experience] ?? '맞춤 루틴'
 
   return (
     <div className="fit-plan">
       <Link className="fit-plan__back" to="/plan">‹ 이번 주 운동 계획</Link>
 
-      <header className="fit-plan__header">
-        <h1>{session.day} {session.title}</h1>
-        <p>약 {session.duration}분 · {level}</p>
-      </header>
+      {loading && <p className="fit-plan__state" role="status">운동을 불러오는 중이에요...</p>}
+      {error && <p className="fit-plan__state" role="alert">{error.status === 404 ? '운동을 찾을 수 없어요.' : error.message}</p>}
 
-      <ul className="fit-plan__exercises" aria-label="운동 종목">
-        {routine.map((exercise) => (
-          <li key={exercise.id}>
-            <ExerciseIcon type={exercise.icon} />
-            <span>
-              <strong>{exercise.name}</strong>
-              <small>{exercise.part} · {exercise.sets}세트 x {exercise.reps}회</small>
-            </span>
-          </li>
-        ))}
-      </ul>
+      {session && (
+        <>
+          <header className="fit-plan__header">
+            <h1>{session.day} {session.title}</h1>
+            <p>약 {session.duration}분 · {level}</p>
+          </header>
 
-      <div className="fit-plan__actions fit-plan__actions--bottom">
+          <ul className="fit-plan__exercises" aria-label="운동 종목">
+            {session.exercises.map((exercise) => (
+              <li key={exercise.id}>
+                <ExerciseIcon name={exercise.name} />
+                <span>
+                  <strong>{exercise.name}</strong>
+                  <small>{exercise.detail}</small>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+
+      <div className="fit-plan__actions">
         <Link className="fit-plan__button" to="/plan">이전으로</Link>
       </div>
     </div>

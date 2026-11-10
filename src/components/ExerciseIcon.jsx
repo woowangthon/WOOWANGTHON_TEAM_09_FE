@@ -52,11 +52,29 @@ const figures = {
   ),
 }
 
-export default function ExerciseIcon({ type }) {
+// 종목 이름으로 아이콘을 골라요. (서버는 아이콘 정보를 주지 않아요)
+const keywords = [
+  ['bridge', ['브릿지', '브리지', '힙 쓰러스트', '데드버그', '플랭크', '크런치', '복근', '윗몸']],
+  ['calf', ['카프', '종아리']],
+  ['press', ['레그 프레스', '레그프레스', '레그 익스텐션', '레그 컬']],
+  ['squat', ['스쿼트', '런지', '데드리프트', '스텝', '점프', '버피']],
+  ['pull', ['풀다운', '풀업', '턱걸이', '친업']],
+  ['row', ['로우', '로잉', '사이클', '자전거']],
+  ['shoulder', ['숄더', '어깨', '레이즈', '밀리터리']],
+  ['push', ['체스트', '벤치', '푸시업', '팔굽혀', '플라이', '딥스', '컬', '트라이셉']],
+]
+
+function iconFor(name = '') {
+  return keywords.find(([, words]) => words.some((word) => name.includes(word)))?.[0] ?? 'squat'
+}
+
+export default function ExerciseIcon({ type, name }) {
+  const icon = type ?? iconFor(name)
+
   return (
     <span className="fit-exercise-icon" aria-hidden="true">
       <svg viewBox="0 0 24 24" fill="none" stroke="#6bd2b6" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-        {figures[type] ?? figures.squat}
+        {figures[icon] ?? figures.squat}
       </svg>
     </span>
   )

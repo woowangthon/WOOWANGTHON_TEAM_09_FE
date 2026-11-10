@@ -1,212 +1,31 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
-import TimeSelect from '../components/TimeSelect.jsx'
+import { dayLabel, loadPeriod } from '../api/plan.js'
+import { conflictMessage, createSchedule, deleteSchedule, replaceSchedule } from '../api/schedule.js'
 import FitNavigation from '../components/FitNavigation.jsx'
 import MissedWorkoutCard from '../components/MissedWorkoutCard.jsx'
-import { getBusyPeriods, getFreeSlots } from '../freeTime.js'
-import {
-  formatKoreanTime,
-  getDayLabel,
-  getStatus,
-  getValidRecord,
-  loadPlan,
-  loadRecords,
-  moveSession,
-  savePlan,
-  weekdays,
-} from '../workoutPlan.js'
-import { loadUnavailablePeriod, withUnavailablePeriod } from '../workoutAvailability.js'
-import { loadTimetable, withTimetable } from '../timetable.js'
-import { getRoutineTitle } from '../workoutRoutines.js'
+import TimeSelect from '../components/TimeSelect.jsx'
+import { getBusyPeriods, getFreeSlots, toTime } from '../freeTime.js'
+import { useAsync } from '../hooks/useAsync.js'
+import { addDays, dateKey, formatKoreanTime, weekdays, weekRange } from '../workoutPlan.js'
 import './SchedulePage.css'
 
-const STORAGE_KEY = 'demo-schedules'
+const initialForm = { title: '', date: '', startTime: '', endTime: '' }
+const dateLabel = new Intl.DateTimeFormat('ko-KR', { month: 'long', day: 'numeric', weekday: 'long' })
+const stateLabels = { done: '운동 완료', partial: '운동 부분 완료', missed: '운동 안 함', planned: '운동 예정' }
+const stateByStatus = { 완료: 'done', '부분 완료': 'partial', 미수행: 'missed', '기록 없음': 'planned' }
 
-const initialForm = {
-  title: '',
-  date: '',
-  startTime: '',
-  endTime: '',
-}
-
-function loadSchedules() {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY)
-
-    if (!saved) return []
-
-    const schedules = JSON.parse(saved)
-
-    if (!Array.isArray(schedules)) return []
-
-    return schedules.filter(
-      (schedule) =>
-        schedule &&
-        typeof schedule.id === 'string' &&
-        typeof schedule.title === 'string' &&
-        typeof schedule.date === 'string' &&
-        typeof schedule.startTime === 'string' &&
-        typeof schedule.endTime === 'string'
-    )
-  } catch {
-    return []
-  }
-}
-
-const dateLabel = new Intl.DateTimeFormat('ko-KR', {
-  month: 'long',
-  day: 'numeric',
-  weekday: 'long',
-})
-
-function dateKey(date) {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-
-  return `${year}-${month}-${day}`
-}
+const timeOf = (term) => term.slice(11, 16)
 
 function monthStart(date) {
   return new Date(date.getFullYear(), date.getMonth(), 1)
 }
 
-function weekStart(date) {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate() - date.getDay())
-}
-
-function workoutForDate(plan, date) {
-  if (!plan || typeof plan.approvedAt !== 'string') return null
-
-  const approvedAt = new Date(plan.approvedAt)
-
-  // The demo plan has weekdays only, so show it in the week it was approved.
-  if (dateKey(weekStart(approvedAt)) !== dateKey(weekStart(date))) return null
-
-  return plan.sessions.find((session) => session.day === `${weekdays[date.getDay()]}요일`) ?? null
-}
-
-function timeToMinutes(time) {
-  const [hour, minute] = time.split(':').map(Number)
-  return hour * 60 + minute
-}
-
-function minutesToTime(minutes) {
-  const hour = String(Math.floor(minutes / 60)).padStart(2, '0')
-  const minute = String(minutes % 60).padStart(2, '0')
-  return `${hour}:${minute}`
-}
-
-function overlaps(start, end, busy) {
-  return start < busy.end && end > busy.start
-}
-
-function getChangeOptions(plan, workout, selectedKey, daySchedules, now) {
-  const start = timeToMinutes(workout.time)
-  const busy = daySchedules.map((schedule) => ({
-    start: timeToMinutes(schedule.startTime),
-    end: timeToMinutes(schedule.endTime),
-  }))
-
-  for (const session of plan.sessions) {
-    if (session.id === workout.id || session.day !== workout.day) continue
-    const sessionStart = timeToMinutes(session.time)
-    busy.push({ start: sessionStart, end: sessionStart + session.duration })
-  }
-
-  const options = []
-
-  // 09:00~22:00 사이를 30분 간격으로 검사한다.
-  for (let time = 9 * 60; time + workout.duration <= 22 * 60; time += 30) {
-    const label = minutesToTime(time)
-    const startsAt = new Date(`${selectedKey}T${label}:00`)
-
-    if (time === start || startsAt < now || busy.some((item) => overlaps(time, time + workout.duration, item))) {
-      continue
-    }
-
-    options.push({ start: time, label, end: minutesToTime(time + workout.duration) })
-  }
-
-  return options
-    .sort((a, b) => Math.abs(a.start - start) - Math.abs(b.start - start) || b.start - a.start)
-    .slice(0, 2)
-}
-
-function WorkoutConflict({ workout, conflicts, options, hasRecord, onConfirm }) {
-  const [selectedTime, setSelectedTime] = useState('')
-
-  return (
-    <div className="fit-calendar__conflict">
-      <h3>
-        {conflicts.some((schedule) => schedule.isUnavailable)
-          ? '운동하기 어려운 시간과 겹쳐요'
-          : conflicts.every((schedule) => schedule.isClass)
-            ? '운동 시간이 수업과 겹쳐요'
-            : '운동 시간이 생활 일정과 겹쳐요'}
-      </h3>
-      <p>현재 운동 시간 {workout.time} ~ {minutesToTime(timeToMinutes(workout.time) + workout.duration)}</p>
-      <ul>
-        {conflicts.map((schedule) => (
-          <li key={schedule.id}>
-            {schedule.isClass ? `수업 · ${schedule.title}` : schedule.title} · {schedule.startTime} ~ {schedule.endTime}
-          </li>
-        ))}
-      </ul>
-
-      {hasRecord ? (
-        <p>이미 기록을 저장한 운동이에요.</p>
-      ) : options.length === 0 ? (
-        <p>이 날짜에 변경할 수 있는 시간이 없어요.</p>
-      ) : (
-        <form onSubmit={(event) => {
-          event.preventDefault()
-          onConfirm(selectedTime)
-        }}>
-          <fieldset>
-            <legend>같은 날 가능한 운동 시간</legend>
-            {options.map((option) => (
-              <label key={option.label}>
-                <input
-                  type="radio"
-                  name="workout-time"
-                  value={option.label}
-                  checked={selectedTime === option.label}
-                  onChange={(event) => setSelectedTime(event.target.value)}
-                  required
-                />
-                {option.label} ~ {option.end}
-              </label>
-            ))}
-          </fieldset>
-          <button className="fit-calendar__action" type="submit">
-            선택한 시간으로 변경
-          </button>
-        </form>
-      )}
-    </div>
-  )
-}
-
-function startOfDay(date) {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate())
-}
-
-// 달력 칸 상태: done 완료 · partial 부분 완료 · missed 지나간 날 안 함 · planned 예정
-function workoutState(status, date, today) {
-  if (status === '완료') return 'done'
-  if (status === '부분 완료') return 'partial'
-  return startOfDay(date) < startOfDay(today) ? 'missed' : 'planned'
-}
-
-const stateLabels = { done: '운동 완료', partial: '운동 부분 완료', missed: '운동 안 함', planned: '운동 예정' }
-
-function MonthCalendar({ month, selectedKey, today, schedules, plan, records, onSelect, onMonthChange }) {
+function MonthCalendar({ month, selectedKey, todayKey, sessions, life, onSelect, onMonthChange }) {
   const year = month.getFullYear()
   const monthIndex = month.getMonth()
   const daysInMonth = new Date(year, monthIndex + 1, 0).getDate()
-  const scheduledDates = new Set(schedules.map((schedule) => schedule.date))
-  const todayKey = dateKey(today)
+  const lifeDates = new Set(life.map((item) => item.start_term.slice(0, 10)))
 
   return (
     <section className="fit-calendar__card fit-calendar__month-card" aria-label="월간 달력">
@@ -226,17 +45,16 @@ function MonthCalendar({ month, selectedKey, today, schedules, plan, records, on
           <span key={`blank-${index}`} aria-hidden="true" />
         ))}
         {Array.from({ length: daysInMonth }, (_, index) => {
-          const day = index + 1
-          const date = new Date(year, monthIndex, day)
+          const date = new Date(year, monthIndex, index + 1)
           const key = dateKey(date)
-          const workout = workoutForDate(plan, date)
-          const hasSchedule = scheduledDates.has(key)
-          const status = workout ? getStatus(getValidRecord(records, plan.id, workout.id)) : null
-          const state = workout ? workoutState(status, date, today) : undefined
+          const daySessions = sessions.filter((session) => session.date === key)
+          const status = daySessions.find((session) => session.status !== '완료')?.status ?? daySessions[0]?.status
+          const state = status ? stateByStatus[status] : undefined
+          const hasLife = lifeDates.has(key)
           const label = [dateLabel.format(date)]
 
-          if (workout) label.push(stateLabels[state])
-          if (hasSchedule) label.push('생활 일정 있음')
+          if (state) label.push(stateLabels[state])
+          if (hasLife) label.push('생활 일정 있음')
 
           return (
             <button
@@ -249,8 +67,8 @@ function MonthCalendar({ month, selectedKey, today, schedules, plan, records, on
               aria-current={key === todayKey ? 'date' : undefined}
               onClick={() => onSelect(date)}
             >
-              <span>{day}</span>
-              {hasSchedule && <i className="fit-calendar__schedule-dot" aria-hidden="true" />}
+              <span>{index + 1}</span>
+              {hasLife && <i className="fit-calendar__schedule-dot" aria-hidden="true" />}
             </button>
           )
         })}
@@ -263,91 +81,28 @@ export default function SchedulePage() {
   const [today] = useState(() => new Date())
   const [selectedDate, setSelectedDate] = useState(today)
   const [month, setMonth] = useState(() => monthStart(today))
-  const [schedules, setSchedules] = useState(loadSchedules)
-  const [plan, setPlan] = useState(loadPlan)
-  const [records] = useState(loadRecords)
-  const [unavailablePeriod] = useState(loadUnavailablePeriod)
-  const [timetable] = useState(loadTimetable)
   const [form, setForm] = useState(() => ({ ...initialForm, date: dateKey(today) }))
   const [message, setMessage] = useState('')
   const [workoutMessage, setWorkoutMessage] = useState('')
+  const [isSaving, setIsSaving] = useState(false)
 
+  // 달력에 보이는 달 + Day A/B 계산용으로 그 달에 걸친 주 전체를 불러와요.
+  const rangeStart = weekRange(month).start
+  const rangeEnd = weekRange(new Date(month.getFullYear(), month.getMonth() + 1, 0)).end
+  const { data, error, loading, reload } = useAsync(() => loadPeriod(rangeStart, rangeEnd), [dateKey(rangeStart), dateKey(rangeEnd)])
+
+  const sessions = data?.sessions ?? []
+  const life = data?.life ?? []
+  const todayKey = dateKey(today)
   const selectedKey = dateKey(selectedDate)
-  const selectedSchedules = schedules.filter((schedule) => schedule.date === selectedKey)
-  const workout = workoutForDate(plan, selectedDate)
-  const workoutRecord = workout ? getValidRecord(records, plan.id, workout.id) : null
-  const workoutStatus = workout ? getStatus(workoutRecord) : null
-  const workoutStart = workout ? timeToMinutes(workout.time) : 0
-  const busyPeriods = withUnavailablePeriod(withTimetable(selectedSchedules, timetable, selectedDate), unavailablePeriod)
-  const conflicts = workout ? busyPeriods.filter((schedule) =>
-    overlaps(workoutStart, workoutStart + workout.duration, {
-      start: timeToMinutes(schedule.startTime),
-      end: timeToMinutes(schedule.endTime),
-    })
-  ) : []
-  const options = conflicts.length && !workoutRecord
-    ? getChangeOptions(plan, workout, selectedKey, busyPeriods, today)
-    : []
+  const isToday = selectedKey === todayKey
+  const isYesterday = selectedKey === dateKey(addDays(today, -1))
 
-  const todayStart = startOfDay(today)
-  const selectedStart = startOfDay(selectedDate)
-  const isToday = selectedStart.getTime() === todayStart.getTime()
-  const isYesterday = selectedStart.getTime() === todayStart.getTime() - 24 * 60 * 60 * 1000
-  const workoutDone = workoutRecord?.exercises.filter((exercise) => exercise.completed).length ?? 0
-  const state = workout ? workoutState(workoutStatus, selectedDate, today) : null
-  const canMoveToToday = state === 'missed' && !workoutForDate(plan, today)
-  const freeSlots = canMoveToToday
-    ? getFreeSlots(getBusyPeriods(today), workout.duration, today.getHours() * 60 + today.getMinutes() + 30)
-    : []
-
-  function moveMissedToToday(minutes) {
-    const time = minutesToTime(minutes)
-    const updatedPlan = moveSession(plan, workout.id, `${weekdays[today.getDay()]}요일`, time)
-
-    try {
-      savePlan(updatedPlan)
-      setPlan(updatedPlan)
-      selectDate(today)
-      setWorkoutMessage(`오늘 ${formatKoreanTime(time)}로 옮겼어요.`)
-    } catch {
-      setWorkoutMessage('운동 시간을 바꾸지 못했어요. 다시 시도해 주세요.')
-    }
-  }
-
-  function changeWorkoutTime(time) {
-    const currentPlan = loadPlan()
-    const currentWorkout = workoutForDate(currentPlan, selectedDate)
-    const currentSchedules = loadSchedules().filter((schedule) => schedule.date === selectedKey)
-    const currentBusyPeriods = withUnavailablePeriod(withTimetable(currentSchedules, loadTimetable(), selectedDate), loadUnavailablePeriod())
-
-    if (
-      !currentWorkout ||
-      currentPlan.approvedAt !== plan.approvedAt ||
-      currentWorkout.id !== workout.id ||
-      currentWorkout.time !== workout.time ||
-      getValidRecord(loadRecords(), currentPlan.id, currentWorkout.id) ||
-      !getChangeOptions(currentPlan, currentWorkout, selectedKey, currentBusyPeriods, new Date())
-        .some((option) => option.label === time)
-    ) {
-      setWorkoutMessage('일정이 바뀌었어요. 화면을 새로 열고 다시 확인해 주세요.')
-      return
-    }
-
-    const updatedPlan = {
-      ...currentPlan,
-      sessions: currentPlan.sessions.map((session) =>
-        session.id === currentWorkout.id ? { ...session, time } : session
-      ),
-    }
-
-    try {
-      savePlan(updatedPlan)
-      setPlan(updatedPlan)
-      setWorkoutMessage(`운동 시간을 ${time}로 변경했어요.`)
-    } catch {
-      setWorkoutMessage('운동 시간을 저장하지 못했어요. 다시 시도해 주세요.')
-    }
-  }
+  const { start: weekStart, end: weekEnd } = weekRange(selectedDate)
+  const weekSessions = sessions.filter((session) => session.date >= dateKey(weekStart) && session.date <= dateKey(weekEnd))
+  const daySessions = sessions.filter((session) => session.date === selectedKey)
+  const dayLife = life.filter((item) => item.start_term.startsWith(selectedKey))
+  const todaySessions = sessions.filter((session) => session.date === todayKey)
 
   function selectDate(date) {
     setSelectedDate(date)
@@ -358,66 +113,120 @@ export default function SchedulePage() {
 
   function changeMonth(offset) {
     const nextMonth = new Date(month.getFullYear(), month.getMonth() + offset, 1)
-
     setMonth(nextMonth)
     selectDate(nextMonth)
   }
 
+  function slotsFor(session) {
+    const periods = [
+      ...life.filter((item) => item.start_term.startsWith(todayKey)).map((item) => ({ startTime: timeOf(item.start_term), endTime: timeOf(item.end_term) })),
+      ...todaySessions.map((item) => ({ startTime: item.time, endTime: item.endTime })),
+    ]
+    return getFreeSlots(getBusyPeriods(today, periods), session.duration, today.getHours() * 60 + today.getMinutes() + 30)
+  }
+
+  async function moveToToday(session, minutes) {
+    const start = toTime(minutes)
+
+    try {
+      await replaceSchedule(session.id, {
+        name: session.name,
+        start_term: `${todayKey}T${start}`,
+        end_term: `${todayKey}T${toTime(minutes + session.duration)}`,
+      })
+      selectDate(today)
+      setMonth(monthStart(today))
+      setWorkoutMessage(`오늘 ${formatKoreanTime(start)}로 옮겼어요.`)
+      reload()
+    } catch (caught) {
+      setWorkoutMessage(caught.status === 409 ? conflictMessage(caught) : caught.message)
+    }
+  }
+
   function handleChange(event) {
     const { name, value } = event.target
-
     setForm((previous) => ({ ...previous, [name]: value }))
     setMessage('')
   }
 
-  function saveSchedules(nextSchedules) {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(nextSchedules))
-      setSchedules(nextSchedules)
-      return true
-    } catch {
-      setMessage('저장하지 못했어요. 다시 시도해 주세요.')
-      return false
-    }
-  }
-
-  function addSchedule(event) {
+  async function addLifeSchedule(event) {
     event.preventDefault()
 
     if (!form.title.trim()) {
       setMessage('일정 이름을 입력해 주세요.')
       return
     }
-
-    if (form.startTime >= form.endTime) {
+    if (!form.startTime || !form.endTime || form.startTime >= form.endTime) {
       setMessage('종료 시간은 시작 시간보다 늦어야 해요.')
       return
     }
 
-    const newSchedule = {
-      id: crypto.randomUUID(),
-      ...form,
-      title: form.title.trim(),
-    }
-
-    const nextSchedules = [...schedules, newSchedule].sort((a, b) =>
-      `${a.date}T${a.startTime}`.localeCompare(`${b.date}T${b.startTime}`)
-    )
-
-    if (saveSchedules(nextSchedules)) {
+    setIsSaving(true)
+    try {
+      await createSchedule({
+        name: form.title.trim(),
+        start_term: `${form.date}T${form.startTime}`,
+        end_term: `${form.date}T${form.endTime}`,
+      })
       const date = new Date(`${form.date}T00:00:00`)
-      setSelectedDate(date)
       setMonth(monthStart(date))
+      setSelectedDate(date)
       setForm({ ...initialForm, date: form.date })
-      setWorkoutMessage('')
       setMessage('일정을 추가했어요.')
+      reload()
+    } catch (caught) {
+      setMessage(caught.status === 409 ? conflictMessage(caught) : caught.message)
+    } finally {
+      setIsSaving(false)
     }
   }
 
-  function deleteSchedule(id) {
-    if (saveSchedules(schedules.filter((schedule) => schedule.id !== id))) {
+  async function removeLifeSchedule(item) {
+    try {
+      await deleteSchedule(item.id)
       setMessage('일정을 삭제했어요.')
+      reload()
+    } catch (caught) {
+      setMessage(caught.message)
     }
+  }
+
+  function renderSession(session) {
+    const label = dayLabel(weekSessions, session.id)
+    const state = stateByStatus[session.status]
+    const canMove = state === 'missed' && todaySessions.length === 0
+
+    if (canMove) {
+      return (
+        <MissedWorkoutCard
+          key={session.id}
+          title={isYesterday ? '어제는 쉬어가셨네요' : '이날은 쉬어가셨네요'}
+          note={`${label} ${formatKoreanTime(session.time)} 일정이었어요.`}
+          session={session}
+          label={label}
+          slots={slotsFor(session)}
+          onMove={(minutes) => moveToToday(session, minutes)}
+          showCalendarLink={false}
+        />
+      )
+    }
+
+    return (
+      <div key={session.id} className="fit-calendar__workout">
+        {state === 'done' && <span className="fit-calendar__badge">완료</span>}
+        <h3>{label} - {session.title}</h3>
+        <p className="fit-calendar__meta">
+          {formatKoreanTime(session.time)} 시작 · {session.duration}분
+          {session.completedCount > 0 && ` · ${session.completedCount}/${session.exercises.length}종목`}
+          {state === 'missed' && ' · 하지 못했어요'}
+        </p>
+        {isToday ? (
+          <Link className="fit-calendar__action" to="/">운동 완료 기록</Link>
+        ) : (
+          <Link className="fit-calendar__action" to={`/plan/${session.id}`}>운동 상세 보기</Link>
+        )}
+      </div>
+    )
   }
 
   return (
@@ -426,10 +235,9 @@ export default function SchedulePage() {
       <MonthCalendar
         month={month}
         selectedKey={selectedKey}
-        today={today}
-        schedules={schedules}
-        plan={plan}
-        records={records}
+        todayKey={todayKey}
+        sessions={sessions}
+        life={life}
         onSelect={selectDate}
         onMonthChange={changeMonth}
       />
@@ -439,65 +247,33 @@ export default function SchedulePage() {
           {selectedDate.getMonth() + 1}월 {selectedDate.getDate()}일 {isToday ? '오늘' : `${weekdays[selectedDate.getDay()]}요일`}
         </p>
 
-        {workout && canMoveToToday ? (
-          <MissedWorkoutCard
-            title={isYesterday ? '어제는 쉬어가셨네요' : '이날은 쉬어가셨네요'}
-            session={workout}
-            note={`${getDayLabel(plan, workout.id)} ${formatKoreanTime(workout.time)} 일정이었어요.`}
-            label={getDayLabel(plan, workout.id)}
-            slots={freeSlots}
-            onMove={moveMissedToToday}
-            showCalendarLink={false}
-          />
-        ) : workout ? (
+        {loading && !data && <p className="fit-calendar__meta" role="status">일정을 불러오는 중이에요...</p>}
+        {error && (
           <>
-            {state === 'done' && <span className="fit-calendar__badge">완료</span>}
-            <h3>{getDayLabel(plan, workout.id)} - {getRoutineTitle(workout)}</h3>
-            <p className="fit-calendar__meta">
-              {formatKoreanTime(workout.time)} 시작 · {workout.duration}분
-              {workoutRecord && ` · ${workoutDone}/${workoutRecord.exercises.length}종목`}
-              {state === 'missed' && ' · 하지 못했어요'}
-            </p>
-            {conflicts.length > 0 && state !== 'done' && (
-              <WorkoutConflict
-                key={`${selectedKey}:${workout.time}:${options.map((option) => option.label).join(',')}`}
-                workout={workout}
-                conflicts={conflicts}
-                options={options}
-                hasRecord={Boolean(workoutRecord)}
-                onConfirm={changeWorkoutTime}
-              />
-            )}
-            {isToday ? (
-              <Link className="fit-calendar__action" to="/">운동 완료 기록</Link>
-            ) : (
-              <Link className="fit-calendar__action" to={`/plan/${workout.id}`}>운동 상세 보기</Link>
-            )}
-          </>
-        ) : (
-          <>
-            <h3>예정된 운동이 없어요</h3>
-            {!plan && <Link className="fit-calendar__action" to="/plan">운동 계획 보기</Link>}
+            <p className="fit-calendar__meta" role="alert">{error.message}</p>
+            <button className="fit-calendar__action" type="button" onClick={reload}>다시 불러오기</button>
           </>
         )}
+        {data && daySessions.length === 0 && <h3>예정된 운동이 없어요</h3>}
+        {daySessions.map(renderSession)}
         {workoutMessage && <p className="fit-calendar__message" role="status">{workoutMessage}</p>}
       </section>
 
       <details className="fit-calendar__card fit-calendar__life">
         <summary>
           <span>생활 일정</span>
-          <small>{selectedSchedules.length ? `이날 ${selectedSchedules.length}개` : '추가하기'}</small>
+          <small>{dayLife.length ? `이날 ${dayLife.length}개` : '추가하기'}</small>
         </summary>
 
-        {selectedSchedules.length > 0 && (
+        {dayLife.length > 0 && (
           <ul className="fit-calendar__events">
-            {selectedSchedules.map((schedule) => (
-              <li key={schedule.id}>
+            {dayLife.map((item) => (
+              <li key={item.id}>
                 <div>
-                  <strong>{schedule.title}</strong>
-                  <p>{schedule.startTime} ~ {schedule.endTime}</p>
+                  <strong>{item.name ?? '일정'}</strong>
+                  <p>{timeOf(item.start_term)} ~ {timeOf(item.end_term)}</p>
                 </div>
-                <button type="button" onClick={() => deleteSchedule(schedule.id)} aria-label={`${schedule.title} 일정 삭제`}>
+                <button type="button" onClick={() => removeLifeSchedule(item)} aria-label={`${item.name ?? '일정'} 삭제`}>
                   삭제
                 </button>
               </li>
@@ -505,7 +281,7 @@ export default function SchedulePage() {
           </ul>
         )}
 
-        <form className="fit-calendar__add" onSubmit={addSchedule}>
+        <form className="fit-calendar__add" onSubmit={addLifeSchedule}>
           <label>
             일정 이름
             <input name="title" value={form.title} onChange={handleChange} placeholder="예: 팀 프로젝트 회의" maxLength={100} required />
@@ -518,7 +294,9 @@ export default function SchedulePage() {
             <TimeSelect label="시작 시간" name="startTime" value={form.startTime} onChange={handleChange} required />
             <TimeSelect label="종료 시간" name="endTime" value={form.endTime} onChange={handleChange} required />
           </div>
-          <button type="submit" className="fit-calendar__action">일정 추가</button>
+          <button type="submit" className="fit-calendar__action" disabled={isSaving}>
+            {isSaving ? '저장하는 중...' : '일정 추가'}
+          </button>
         </form>
         <p className="fit-calendar__message" role="status">{message}</p>
       </details>

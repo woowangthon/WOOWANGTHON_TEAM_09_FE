@@ -192,3 +192,29 @@
   outline: 2px solid var(--plan-mint);
   outline-offset: 2px;
 }
+
+.fit-plan__state {
+  display: grid;
+  gap: 14px;
+  margin: 8px 0 20px;
+  color: var(--plan-muted);
+}
+
+.fit-plan__state p {
+  margin: 0;
+}
+
+.fit-plan__precaution {
+  margin: 14px 0 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #1c1c1b;
+  color: var(--plan-muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.fit-plan__button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}

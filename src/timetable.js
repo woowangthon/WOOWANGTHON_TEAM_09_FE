@@ -28,14 +28,3 @@ export function saveTimetable(classes) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(classes))
 }
 
-// 캘린더의 하루 일정 목록에 그 요일 수업을 더해요.
-export function withTimetable(schedules, classes, date) {
-  const weekday = String(date.getDay())
-
-  return [
-    ...schedules,
-    ...classes
-      .filter((item) => item.weekday === weekday)
-      .map((item) => ({ ...item, id: `class-${item.id}`, isClass: true })),
-  ]
-}

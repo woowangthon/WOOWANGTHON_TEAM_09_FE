@@ -177,10 +177,22 @@
   font-size: 12px;
 }
 
+.fit-calendar__workout {
+  position: relative;
+}
+
+.fit-calendar__workout + .fit-calendar__workout,
+.fit-calendar__workout + .fit-missed,
+.fit-missed + .fit-calendar__workout {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--calendar-border);
+}
+
 .fit-calendar__badge {
   position: absolute;
-  top: 12px;
-  right: 12px;
+  top: -22px;
+  right: 0;
   padding: 2px 8px;
   border-radius: 999px;
   background: var(--calendar-mint);
@@ -310,53 +322,4 @@
 .fit-calendar :focus-visible {
   outline: 2px solid var(--calendar-mint);
   outline-offset: 2px;
-}
-
-/* 운동 시간 충돌 안내 */
-.fit-calendar__conflict {
-  margin-block: 12px;
-  padding: 12px;
-  border: 1px solid #9d4e69;
-  border-radius: 14px;
-  background: #332128;
-}
-
-.fit-calendar__conflict h3 {
-  margin-bottom: 5px;
-  color: #ffc1d7;
-}
-
-.fit-calendar__conflict ul {
-  margin: 6px 0 10px;
-  padding-inline-start: 18px;
-  overflow-wrap: anywhere;
-}
-
-.fit-calendar__conflict fieldset {
-  display: grid;
-  gap: 6px;
-  margin: 0;
-  padding: 0;
-  border: 0;
-}
-
-.fit-calendar__conflict legend {
-  margin-bottom: 6px;
-  padding: 0;
-  font-weight: 650;
-}
-
-.fit-calendar__conflict label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 40px;
-  padding-inline: 8px;
-  border: 1px solid #7a5060;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-.fit-calendar__conflict input {
-  accent-color: var(--calendar-mint);
 }

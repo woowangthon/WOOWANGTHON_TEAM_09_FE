@@ -185,6 +185,11 @@
 
 .fit-report__plan-link {
   display: grid;
+  box-sizing: border-box;
+  width: 100%;
+  border: 0;
+  font: inherit;
+  cursor: pointer;
   min-height: 42px;
   margin-top: 14px;
   place-items: center;
