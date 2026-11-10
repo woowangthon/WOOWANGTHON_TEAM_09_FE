@@ -111,44 +111,6 @@
   text-decoration: none;
 }
 
-.fit-home__week {
-  display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.fit-home__week li {
-  display: grid;
-  justify-items: center;
-  gap: 3px;
-  font-size: 12px;
-}
-
-.fit-home__dot {
-  box-sizing: border-box;
-  width: 20px;
-  height: 20px;
-  border: 1px solid transparent;
-  border-radius: 50%;
-  background: #707070;
-}
-
-.fit-home__dot[data-status='예정'] {
-  border-color: var(--home-mint);
-  background: transparent;
-}
-
-.fit-home__dot[data-status='부분 완료'] {
-  border-color: var(--home-mint);
-  background: linear-gradient(90deg, var(--home-mint) 50%, transparent 50%);
-}
-
-.fit-home__dot[data-status='완료'] {
-  background: var(--home-mint);
-}
-
 .fit-home__details {
   display: grid;
   gap: 14px;
@@ -190,13 +152,4 @@
 .fit-home :focus-visible {
   outline: 2px solid var(--home-mint);
   outline-offset: 3px;
-}
-
-.fit-home__sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
 }

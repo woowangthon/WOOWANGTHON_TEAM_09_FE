@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { exampleRoutines } from '../workoutRoutines.js'
-import { getStatus, getValidRecord, loadPlan, loadRecords, readStorage, weekdays } from '../workoutPlan.js'
+import { getPlanSessions, getPlanProgress, loadPlan, loadRecords, readStorage, weekdays } from '../workoutPlan.js'
 import FitNavigation from '../components/FitNavigation.jsx'
+import WorkoutWeek from '../components/WorkoutWeek.jsx'
 import './HomePage.css'
 
 const dateFormat = new Intl.DateTimeFormat('ko-KR', {
@@ -54,21 +55,12 @@ export default function HomePage() {
   const [schedules, setSchedules] = useState(loadUpcomingSchedules)
   const [today] = useState(() => new Date())
 
-  const sessions = plan
-    ? plan.sessions.map((session) => {
-        const record = getValidRecord(records, plan.id, session.id)
-        return { ...session, record, status: getStatus(record) }
-      })
-    : []
+  const sessions = getPlanSessions(plan, records)
 
   const featured = getFeaturedSession(sessions, today.getDay())
   const isToday = featured?.day === `${weekdays[today.getDay()]}요일`
   const routine = featured ? exampleRoutines[featured.id] ?? [] : []
-  const completedSessions = sessions.filter((session) => session.status === '완료').length
-  const partialSessions = sessions.filter((session) => session.status === '부분 완료').length
-  const completionRate = sessions.length
-    ? Math.round((completedSessions / sessions.length) * 100)
-    : 0
+  const { completed, partial, rate } = getPlanProgress(sessions)
   const totalMinutes = sessions.reduce((total, session) => total + session.duration, 0)
 
   const latestSession = sessions
@@ -113,24 +105,9 @@ export default function HomePage() {
           </div>
         </section>
 
-        <a className="fit-home__week-link" href="#home-progress" aria-label="주간 운동 진행 상세 보기">
-          <ul className="fit-home__week">
-            {weekdays.map((day) => {
-              const session = sessions.find((item) => item.day === `${day}요일`)
-              const status = session?.status === '기록 없음'
-                ? '예정'
-                : session?.status ?? '일정 없음'
-
-              return (
-                <li key={day}>
-                  <span aria-hidden="true">{day}</span>
-                  <span className="fit-home__dot" data-status={status} aria-hidden="true" />
-                  <span className="fit-home__sr-only">{day}요일 {status}</span>
-                </li>
-              )
-            })}
-          </ul>
-        </a>
+        <Link className="fit-home__week-link" to="/report" aria-label="주간 운동 리포트 보기">
+          <WorkoutWeek sessions={sessions} />
+        </Link>
       </div>
 
       <div className="fit-home__details">
@@ -139,9 +116,9 @@ export default function HomePage() {
           {plan ? (
             <>
               <p>주 {sessions.length}회 · 총 {totalMinutes}분</p>
-              <p>완료 {completedSessions}/{sessions.length}회 · 부분 완료 {partialSessions}회</p>
-              <p>계획 수행률 {completionRate}%</p>
-              <progress aria-label="계획 수행률" value={completionRate} max="100" />
+              <p>완료 {completed}/{sessions.length}회 · 부분 완료 {partial}회</p>
+              <p>계획 수행률 {rate}%</p>
+              <progress aria-label="계획 수행률" value={rate} max="100" />
               <ul>
                 {sessions.map((session) => (
                   <li key={session.id}>

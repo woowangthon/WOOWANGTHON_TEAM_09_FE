@@ -6,6 +6,7 @@ import PlanPage from './pages/PlanPage'
 import WorkoutPage from './pages/WorkoutPage'
 import SchedulePage from './pages/SchedulePage'
 import ProfilePage from './pages/ProfilePage'
+import ReportPage from './pages/ReportPage'
 
 function PageNavigation() {
   const isHome = useMatch({ path: '/', end: true })
@@ -20,7 +21,9 @@ function PageNavigation() {
 
   const isSignup = useMatch({ path: '/signup', end: true })
 
-  if (isHome || isSchedule || isProfile || isWorkout || isPlan || isSignup) return null
+  const isReport = useMatch({ path: '/report', end: true })
+
+  if (isHome || isSchedule || isProfile || isWorkout || isPlan || isSignup || isReport) return null
 
   return (
     <nav aria-label="주요 메뉴">
@@ -49,6 +52,7 @@ export default function App() {
           <Route path="/workout" element={<WorkoutPage />} />
           <Route path="/schedule" element={<SchedulePage />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/report" element={<ReportPage />} />
           <Route
             path="*"
             element={<h1>페이지를 찾을 수 없어요</h1>}

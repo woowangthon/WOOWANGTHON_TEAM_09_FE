@@ -1,0 +1,47 @@
+.fit-week {
+  --week-mint: #6bd2b6;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fit-week li {
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+  font-size: 12px;
+}
+
+.fit-week__dot {
+  box-sizing: border-box;
+  width: 20px;
+  height: 20px;
+  border: 1px solid transparent;
+  border-radius: 50%;
+  background: #707070;
+}
+
+.fit-week__dot[data-status='기록 없음'] {
+  border-color: var(--week-mint);
+  background: transparent;
+}
+
+.fit-week__dot[data-status='부분 완료'] {
+  border-color: var(--week-mint);
+  background: linear-gradient(90deg, var(--week-mint) 50%, transparent 50%);
+}
+
+.fit-week__dot[data-status='완료'] {
+  background: var(--week-mint);
+}
+
+.fit-week__sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

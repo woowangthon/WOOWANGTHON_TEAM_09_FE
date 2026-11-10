@@ -79,3 +79,26 @@ export function getStatus(record) {
   if (count > 0) return '부분 완료'
   return '미수행'
 }
+
+export function getPlanSessions(plan, records) {
+  if (!plan) return []
+
+  return plan.sessions.map((session) => {
+    const record = getValidRecord(records, plan.id, session.id)
+    return { ...session, record, status: getStatus(record) }
+  })
+}
+
+export function getPlanProgress(sessions) {
+  const completed = sessions.filter((session) => session.status === '완료').length
+  const partial = sessions.filter((session) => session.status === '부분 완료').length
+  const missed = sessions.filter((session) => session.status === '미수행').length
+
+  return {
+    completed,
+    partial,
+    missed,
+    unrecorded: sessions.length - completed - partial - missed,
+    rate: sessions.length ? Math.round((completed / sessions.length) * 100) : 0,
+  }
+}
