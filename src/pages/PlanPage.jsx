@@ -1,109 +1,91 @@
 import { useState } from 'react'
-import { Link } from 'react-router'
-import FitNavigation from '../components/FitNavigation.jsx'
-import { createPlan, loadPlan, savePlan } from '../workoutPlan.js'
-import { getUnavailableSegments, loadUnavailablePeriod } from '../workoutAvailability.js'
-import { loadTimetable } from '../timetable.js'
-import { exampleRoutines } from '../workoutRoutines.js'
+import { Link, useNavigate } from 'react-router'
+import { createDraftPlan, loadBlockedPeriods, loadCurrentPlan, loadPlanVariant, savePlanVariant } from '../planDraft.js'
+import { formatKoreanTime, savePlan } from '../workoutPlan.js'
 import './PlanPage.css'
 
 export default function PlanPage() {
-  const [approvedPlan, setApprovedPlan] = useState(() => {
-    const saved = loadPlan()
-    return typeof saved?.approvedAt === 'string' ? saved : null
-  })
-  const [blockedPeriods] = useState(() => [...getUnavailableSegments(loadUnavailablePeriod()), ...loadTimetable()])
+  const navigate = useNavigate()
+  const [{ plan, isApproved }, setCurrent] = useState(loadCurrentPlan)
+  const [hasBlocks] = useState(() => loadBlockedPeriods().length > 0)
   const [message, setMessage] = useState('')
 
-  const draftPlan = createPlan(blockedPeriods)
-  const adjustedCount = draftPlan.sessions.filter((session) => session.adjusted).length
-  const { sessions } = approvedPlan ?? draftPlan
-  const totalMinutes = sessions.reduce(
-    (total, session) => total + session.duration,
-    0
-  )
+  const { sessions } = plan
+  const averageMinutes = Math.round(sessions.reduce((total, session) => total + session.duration, 0) / sessions.length)
+  const adjustedCount = sessions.filter((session) => session.adjusted).length
 
-  function approvePlan() {
-    const plan = {
-      ...draftPlan,
-      approvedAt: new Date().toISOString(),
-    }
-
+  function startPlan() {
     try {
-      savePlan(plan)
-      setApprovedPlan(plan)
-      setMessage('맞춤 운동 계획을 승인하고 저장했어요.')
+      savePlan({ ...plan, approvedAt: new Date().toISOString() })
     } catch {
       setMessage('저장하지 못했어요. 다시 시도해 주세요.')
+      return
     }
+
+    navigate('/')
+  }
+
+  function recommendAnother() {
+    const variant = loadPlanVariant() + 1
+
+    try {
+      savePlanVariant(variant)
+    } catch {
+      // 저장하지 못해도 이번 화면에서는 새 계획을 보여줘요.
+    }
+
+    setCurrent({ plan: createDraftPlan(variant), isApproved: false })
+    setMessage('다른 운동 계획을 추천했어요.')
   }
 
   return (
     <div className="fit-plan">
+      <Link className="fit-plan__back" to="/">‹ 뒤로</Link>
+
       <header className="fit-plan__header">
-        <span className="fit-plan__eyebrow">{approvedPlan ? '승인한 계획' : '맞춤 계획'}</span>
-        <h1>주간 운동 계획</h1>
-        <p>주 {sessions.length}회 · 총 {totalMinutes}분</p>
-        {!approvedPlan && blockedPeriods.length > 0 && (
-          <p className="fit-plan__notice">
-            {adjustedCount
-              ? `수업·운동하기 어려운 시간과 겹치는 운동 ${adjustedCount}개의 시간을 조정했어요.`
-              : '수업·운동하기 어려운 시간과 겹치는 운동이 없어 기본 시간으로 구성했어요.'}
-          </p>
-        )}
+        <h1>이번주 운동 계획</h1>
+        <p>주 {sessions.length}회 · 회당 약 {averageMinutes}분</p>
       </header>
+
+      {!isApproved && hasBlocks && adjustedCount > 0 && (
+        <p className="fit-plan__notice">
+          수업·운동하기 어려운 시간을 피해 {adjustedCount}개 운동의 시간을 조정했어요.
+        </p>
+      )}
 
       <ul className="fit-plan__sessions" aria-label="운동 일정">
         {sessions.map((session) => (
           <li key={session.id}>
-            <details className="fit-plan__session">
-              <summary>
-                <span>
-                  <small>
-                    {session.day} {session.time} · {session.duration}분
-                    {session.adjusted && <span className="fit-plan__adjusted"> · 시간 조정됨</span>}
-                  </small>
-                  <strong>{session.title}</strong>
-                </span>
-                <span className="fit-plan__chevron" aria-hidden="true">›</span>
-              </summary>
-
-              <ul className="fit-plan__routine">
-                {(exampleRoutines[session.id] ?? []).map((exercise) => (
-                  <li key={exercise.id}>
-                    <span>{exercise.name}</span>
-                    <span>{exercise.sets}세트 × {exercise.reps}회</span>
-                  </li>
-                ))}
-              </ul>
-            </details>
+            <Link className="fit-plan__session" to={`/plan/${session.id}`}>
+              <span>
+                <small>
+                  {session.day} · {formatKoreanTime(session.time)}
+                  {session.adjusted && !isApproved && <span className="fit-plan__adjusted"> · 시간 조정됨</span>}
+                </small>
+                <strong>{session.title}</strong>
+              </span>
+              <span className="fit-plan__duration">{session.duration}분 ›</span>
+            </Link>
           </li>
         ))}
       </ul>
 
-      <p className="fit-plan__hint">운동 카드를 누르면 종목과 세트·횟수를 볼 수 있어요.</p>
+      <p className="fit-plan__hint">일정을 누르면 운동 종목과 세트를 확인할 수 있어요.</p>
 
       <div className="fit-plan__actions">
-        {approvedPlan ? (
+        {isApproved ? (
           <>
-            <p className="fit-plan__approved">승인한 운동 계획이에요.</p>
-            <Link className="fit-plan__button fit-plan__button--primary" to="/">
-              홈에서 계획 보기
-            </Link>
-            <Link className="fit-plan__button" to="/workout">운동 기록하기</Link>
+            <p className="fit-plan__approved">진행 중인 운동 계획이에요.</p>
+            <Link className="fit-plan__button" to="/">홈으로 가기</Link>
           </>
         ) : (
           <>
-            <button className="fit-plan__button fit-plan__button--primary" type="button" onClick={approvePlan}>
-              이 계획 승인하기
-            </button>
-            <Link className="fit-plan__button" to="/">홈으로 돌아가기</Link>
+            <button className="fit-plan__button" type="button" onClick={startPlan}>이 계획으로 시작하기</button>
+            <button className="fit-plan__button" type="button" onClick={recommendAnother}>다른 계획 추천 받기</button>
           </>
         )}
         <p className="fit-plan__message" role="status">{message}</p>
       </div>
-
-      <FitNavigation />
     </div>
   )
 }

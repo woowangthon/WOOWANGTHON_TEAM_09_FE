@@ -103,14 +103,35 @@ export function getPlanProgress(sessions) {
   }
 }
 
-// AI 연결 전 화면 확인용 기본 주간 계획
-export const examplePlan = {
-  id: 'demo-weekly-plan-1',
-  sessions: [
-    { id: 'session-1', day: '월요일', time: '17:00', duration: 40, title: '상체 운동' },
-    { id: 'session-2', day: '수요일', time: '18:00', duration: 40, title: '하체 운동' },
-    { id: 'session-3', day: '금요일', time: '16:00', duration: 30, title: '전신 운동' },
-  ],
+// AI 연결 전 화면 확인용 예시 주간 계획. 「다른 계획 추천 받기」를 누르면 다음 예시로 바뀌어요.
+export const planTemplates = [
+  {
+    id: 'demo-weekly-plan-1',
+    sessions: [
+      { id: 'session-2', day: '월요일', time: '18:00', duration: 40, title: '하체 운동' },
+      { id: 'session-1', day: '수요일', time: '17:30', duration: 40, title: '상체 운동' },
+      { id: 'session-3', day: '토요일', time: '11:00', duration: 40, title: '전신 운동' },
+    ],
+  },
+  {
+    id: 'demo-weekly-plan-1',
+    sessions: [
+      { id: 'session-1', day: '화요일', time: '19:00', duration: 40, title: '상체 운동' },
+      { id: 'session-2', day: '목요일', time: '19:00', duration: 40, title: '하체 운동' },
+      { id: 'session-3', day: '일요일', time: '10:00', duration: 40, title: '전신 운동' },
+    ],
+  },
+]
+
+export const examplePlan = planTemplates[0]
+
+// '18:00' → '오후 6:00'
+export function formatKoreanTime(time) {
+  const [hour, minute] = time.split(':').map(Number)
+  const period = hour < 12 ? '오전' : '오후'
+  const displayHour = hour % 12 === 0 ? 12 : hour % 12
+
+  return `${period} ${displayHour}:${String(minute).padStart(2, '0')}`
 }
 
 const DAY_START = 6 * 60
@@ -127,7 +148,9 @@ function toTime(minutes) {
 }
 
 // 운동하기 어려운 시간·수업 시간과 겹치는 세션을 같은 날 가장 가까운 빈 시간으로 옮겨요.
-export function createPlan(blockedPeriods = []) {
+export function createPlan(blockedPeriods = [], variant = 0) {
+  const template = planTemplates[variant % planTemplates.length]
+
   // weekday가 없는 구간은 매일 적용돼요.
   const blocks = blockedPeriods.filter(Boolean).map((period) => ({
     day: period.weekday === undefined ? null : `${weekdays[Number(period.weekday)]}요일`,
@@ -135,11 +158,11 @@ export function createPlan(blockedPeriods = []) {
     end: toMinutes(period.endTime),
   }))
 
-  if (blocks.length === 0) return examplePlan
+  if (blocks.length === 0) return template
 
   return {
-    ...examplePlan,
-    sessions: examplePlan.sessions.map((session) => {
+    ...template,
+    sessions: template.sessions.map((session) => {
       const dayBlocks = blocks.filter((block) => block.day === null || block.day === session.day)
       const isFree = (start) =>
         start >= DAY_START &&

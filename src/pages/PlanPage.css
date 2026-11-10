@@ -2,158 +2,200 @@
   width: 100%;
   max-width: none;
   border: 0;
-  background: #000;
+  background: #0d0d0d;
 }
 
 .fit-plan {
-  --plan-panel: #252523;
-  --plan-border: #454542;
-  --plan-muted: #c2c2bf;
+  --plan-panel: #333332;
+  --plan-border: #4a4a48;
+  --plan-muted: #b5b5b2;
   --plan-mint: #6bd2b6;
-  --plan-berry: #a91f50;
+  --plan-berry: #b8245a;
 
+  display: flex;
   box-sizing: border-box;
+  flex-direction: column;
   width: min(100%, 400px);
+  min-height: 100svh;
   margin-inline: auto;
-  padding: max(54px, env(safe-area-inset-top)) 20px calc(104px + env(safe-area-inset-bottom));
+  padding: max(28px, env(safe-area-inset-top)) 20px calc(32px + env(safe-area-inset-bottom));
   color: #fafafa;
   color-scheme: dark;
   font: 14px/1.45 system-ui, 'Malgun Gothic', sans-serif;
   text-align: left;
 }
 
-.fit-plan__header {
-  margin-bottom: 24px;
+.fit-plan__back {
+  align-self: flex-start;
+  min-height: 32px;
+  padding: 4px 0;
+  color: var(--plan-muted);
+  font-size: 12px;
+  text-decoration: none;
 }
 
-.fit-plan__eyebrow {
-  color: var(--plan-mint);
-  font-size: 13px;
-  font-weight: 650;
+.fit-plan__header {
+  margin: 2px 0 28px;
 }
 
 .fit-plan h1 {
-  margin: 6px 0 8px;
+  margin: 0 0 6px;
   color: inherit;
-  font: 700 28px/1.2 system-ui, 'Malgun Gothic', sans-serif;
-  letter-spacing: -0.045em;
+  font: 800 24px/1.3 system-ui, 'Malgun Gothic', sans-serif;
+  letter-spacing: -0.04em;
 }
 
-.fit-plan__header p,
-.fit-plan__hint {
+.fit-plan__header p {
+  margin: 0;
   color: var(--plan-muted);
 }
 
-.fit-plan__sessions {
+.fit-plan__notice {
+  margin: -12px 0 16px;
+  padding: 10px 12px;
+  border: 1px solid #2f5a4e;
+  border-radius: 12px;
+  background: #15241f;
+  font-size: 13px;
+  word-break: keep-all;
+}
+
+/* 운동 일정 카드 */
+.fit-plan__sessions,
+.fit-plan__exercises {
   display: grid;
-  gap: 8px;
+  gap: 10px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
 .fit-plan__session {
-  border: 1px solid var(--plan-border);
-  border-inline-start: 4px solid var(--plan-mint);
-  border-radius: 14px;
-  background: var(--plan-panel);
-}
-
-.fit-plan__session summary {
   display: flex;
-  align-items: center;
+  box-sizing: border-box;
+  align-items: flex-end;
   justify-content: space-between;
   gap: 12px;
-  min-height: 62px;
-  padding: 8px 14px;
-  list-style: none;
-  cursor: pointer;
+  min-height: 64px;
+  padding: 12px 12px 12px 14px;
+  border: 1px solid var(--plan-border);
+  border-inline-start: 5px solid var(--plan-mint);
+  border-radius: 12px;
+  background: var(--plan-panel);
+  color: inherit;
+  text-decoration: none;
 }
 
-.fit-plan__session summary::-webkit-details-marker {
-  display: none;
+.fit-plan__session > span:first-child {
+  display: grid;
+  gap: 6px;
 }
 
 .fit-plan__session small {
-  display: block;
-  margin-bottom: 4px;
-  color: var(--plan-muted);
-}
-
-.fit-plan__session strong {
-  font-size: 16px;
-}
-
-.fit-plan__chevron {
-  color: var(--plan-muted);
-  font-size: 23px;
-  line-height: 1;
-}
-
-.fit-plan__session[open] .fit-plan__chevron {
-  transform: rotate(90deg);
-}
-
-.fit-plan__routine {
-  margin: 0;
-  padding: 0 14px 8px;
-  list-style: none;
-}
-
-.fit-plan__routine li {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 4px 10px;
-  padding: 8px 0;
-  border-top: 1px solid var(--plan-border);
-}
-
-.fit-plan__routine li span:last-child {
-  color: var(--plan-muted);
-}
-
-.fit-plan__hint {
-  margin-top: 10px;
+  color: #e4e4e1;
   font-size: 12px;
 }
 
+.fit-plan__session strong {
+  font-size: 14px;
+}
+
+.fit-plan__duration {
+  flex-shrink: 0;
+  color: var(--plan-muted);
+  font-size: 11px;
+}
+
+.fit-plan__adjusted {
+  color: var(--plan-mint);
+}
+
+.fit-plan__hint {
+  margin: 12px 0 0;
+  color: var(--plan-muted);
+  font-size: 11px;
+  text-align: center;
+}
+
+/* 운동 종목 카드 */
+.fit-plan__exercises li {
+  display: flex;
+  box-sizing: border-box;
+  align-items: center;
+  gap: 16px;
+  min-height: 64px;
+  padding: 10px 16px;
+  border: 1px solid var(--plan-border);
+  border-radius: 12px;
+  background: var(--plan-panel);
+}
+
+.fit-plan__exercises li > span:last-child {
+  display: grid;
+  gap: 2px;
+}
+
+.fit-plan__exercises strong {
+  font-size: 13px;
+}
+
+.fit-plan__exercises small {
+  color: var(--plan-muted);
+  font-size: 11px;
+}
+
+.fit-exercise-icon {
+  display: grid;
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border-radius: 50%;
+  background: #000;
+}
+
+.fit-exercise-icon svg {
+  width: 26px;
+  height: 26px;
+}
+
+/* 버튼 */
 .fit-plan__actions {
   display: grid;
-  gap: 8px;
-  margin-top: 24px;
+  gap: 10px;
+  margin-top: clamp(40px, 9vh, 80px);
 }
 
 .fit-plan__button {
   display: grid;
   box-sizing: border-box;
-  width: 100%;
-  min-height: 48px;
+  width: min(100%, 260px);
+  min-height: 46px;
+  justify-self: center;
   padding: 4px 12px;
   place-items: center;
-  border: 1px solid var(--plan-border);
+  border: 0;
   border-radius: 999px;
-  background: var(--plan-panel);
-  color: inherit;
+  background: var(--plan-berry);
+  color: #fafafa;
   font: inherit;
-  font-weight: 650;
+  font-weight: 600;
   text-align: center;
   text-decoration: none;
   cursor: pointer;
 }
 
-.fit-plan__button--primary {
-  border-color: var(--plan-berry);
-  background: var(--plan-berry);
-  color: #fff;
-}
-
 .fit-plan__approved {
+  margin: 0;
   color: var(--plan-mint);
+  text-align: center;
 }
 
 .fit-plan__message {
+  margin: 0;
+  color: var(--plan-mint);
   font-size: 13px;
+  text-align: center;
 }
 
 .fit-plan__message:empty {
@@ -163,18 +205,4 @@
 .fit-plan :focus-visible {
   outline: 2px solid var(--plan-mint);
   outline-offset: 2px;
-}
-
-.fit-plan__notice {
-  margin-top: 10px;
-  padding: 10px 12px;
-  border: 1px solid var(--plan-border);
-  border-radius: 12px;
-  background: #182b26;
-  color: #fafafa;
-  word-break: keep-all;
-}
-
-.fit-plan__adjusted {
-  color: var(--plan-mint);
 }
