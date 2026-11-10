@@ -1,4 +1,4 @@
-const BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? 'https://woowangthonteam09be-production.up.railway.app').replace(/\/$/, '')
+const BASE_URL = (import.meta.env?.VITE_API_BASE_URL ?? 'https://woowangthonteam09be-production.up.railway.app').replace(/\/$/, '')
 const TOKEN_KEY = 'auth-token'
 
 export class ApiError extends Error {

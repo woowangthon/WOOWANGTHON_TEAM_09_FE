@@ -4,7 +4,8 @@ import SetupProgress from '../components/SetupProgress.jsx'
 import TimeSelect from '../components/TimeSelect.jsx'
 import UploadPanel from '../components/UploadPanel.jsx'
 import { useImageFile } from '../hooks/useImageFile.js'
-import { getTimetableClass, loadTimetable, saveTimetable } from '../timetable.js'
+import { addClass, deleteClass, refreshTimetable } from '../api/weeklyBlocks.js'
+import { getTimetableClass, loadTimetable } from '../timetable.js'
 import { weekdays } from '../workoutPlan.js'
 import './SignupPage.css'
 import './UploadSetup.css'
@@ -20,6 +21,7 @@ export default function TimetablePage() {
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [form, setForm] = useState(initialForm)
   const [message, setMessage] = useState('')
+  const [isSaving, setIsSaving] = useState(false)
   const titleRef = useRef(null)
   const { image, inputRef, selectFile, clear } = useImageFile(setMessage)
 
@@ -28,6 +30,15 @@ export default function TimetablePage() {
   useEffect(() => {
     if (isFormOpen) titleRef.current?.focus()
   }, [isFormOpen])
+
+  // 다른 기기에서 바꾼 수업도 보이게 서버 목록을 받아와요.
+  useEffect(() => {
+    let ignore = false
+    refreshTimetable()
+      .then((latest) => { if (!ignore) setClasses(latest) })
+      .catch(() => {})
+    return () => { ignore = true }
+  }, [])
 
   function handleFileChange(event) {
     if (selectFile(event)) {
@@ -42,36 +53,44 @@ export default function TimetablePage() {
     setMessage('')
   }
 
-  function updateClasses(nextClasses, successMessage) {
+  // 서버에 저장한 뒤 서버의 수업 목록으로 화면을 갱신해요.
+  async function runSync(action, successMessage) {
+    setIsSaving(true)
     try {
-      saveTimetable(nextClasses)
-      setClasses(loadTimetable())
+      await action()
       setMessage(successMessage)
       return true
-    } catch {
-      setMessage('저장하지 못했어요. 다시 시도해 주세요.')
+    } catch (error) {
+      setMessage(error.status === 409 ? '같은 요일에 시간이 겹치는 수업이 있어요.' : error.message)
       return false
+    } finally {
+      try {
+        setClasses(await refreshTimetable())
+      } catch {
+        // 목록을 다시 못 받아도 이전 목록을 그대로 보여줘요.
+      }
+      setIsSaving(false)
     }
   }
 
-  function addClass(event) {
+  async function handleAdd(event) {
     event.preventDefault()
 
-    const item = getTimetableClass({ ...form, id: crypto.randomUUID() })
+    const item = getTimetableClass({ ...form, id: 'new' })
 
     if (!item) {
       setMessage(form.title.trim() ? '종료 시간은 시작 시간보다 늦어야 해요.' : '수업 이름을 입력해 주세요.')
       return
     }
 
-    if (updateClasses([...classes, item], `${item.title} 수업을 추가했어요.`)) {
+    if (await runSync(() => addClass(item), `${item.title} 수업을 추가했어요.`)) {
       setForm((previous) => ({ ...initialForm, weekday: previous.weekday }))
       titleRef.current?.focus()
     }
   }
 
-  function deleteClass(item) {
-    updateClasses(classes.filter((saved) => saved.id !== item.id), `${item.title} 수업을 삭제했어요.`)
+  function handleDelete(item) {
+    runSync(() => deleteClass(item.id), `${item.title} 수업을 삭제했어요.`)
   }
 
   return (
@@ -103,7 +122,7 @@ export default function TimetablePage() {
         )}
 
         {isFormOpen && (
-          <form className="fit-setup__fields fit-setup__panel" onSubmit={addClass}>
+          <form className="fit-setup__fields fit-setup__panel" onSubmit={handleAdd}>
             <label>
               수업 이름
               <input ref={titleRef} name="title" value={form.title} onChange={handleChange} placeholder="예: 자료구조" maxLength={30} required />
@@ -120,7 +139,7 @@ export default function TimetablePage() {
               <TimeSelect label="시작 시간" name="startTime" value={form.startTime} onChange={handleChange} required />
               <TimeSelect label="종료 시간" name="endTime" value={form.endTime} onChange={handleChange} required />
             </div>
-            <button className="fit-setup__add" type="submit">수업 추가</button>
+            <button className="fit-setup__add" type="submit" disabled={isSaving}>{isSaving ? '저장하는 중...' : '수업 추가'}</button>
           </form>
         )}
 
@@ -134,7 +153,7 @@ export default function TimetablePage() {
                     <strong>{item.title}</strong>
                     <small>{weekdays[Number(item.weekday)]}요일 {item.startTime} ~ {item.endTime}</small>
                   </span>
-                  <button type="button" onClick={() => deleteClass(item)} aria-label={`${item.title} 수업 삭제`}>
+                  <button type="button" onClick={() => handleDelete(item)} disabled={isSaving} aria-label={`${item.title} 수업 삭제`}>
                     삭제
                   </button>
                 </li>

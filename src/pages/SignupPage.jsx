@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
+import { bodyInfo, saveInfo } from '../api/profile.js'
+import { saveUnavailablePeriod } from '../api/weeklyBlocks.js'
 import SetupProgress from '../components/SetupProgress.jsx'
 import TimeScrubber from '../components/TimeScrubber.jsx'
 import { crossesMidnight, getUnavailablePeriod } from '../workoutAvailability.js'
@@ -10,7 +12,7 @@ const defaultPeriod = { startTime: '22:00', endTime: '07:00' }
 const goals = ['muscle', 'fat', 'fitness', 'unsure', 'general']
 const experiences = ['beginner', 'intermediate', 'advanced']
 const environments = ['gym', 'none', 'campus', 'planned']
-const genders = ['male', 'female', 'none']
+const genders = ['male', 'female']
 
 const initialProfile = {
   name: '',
@@ -81,9 +83,9 @@ const choiceSteps = {
 const progressByStep = { 1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 5, 7: 6 }
 
 const bodyFields = [
-  { name: 'height', label: '신장', unit: 'cm', max: 300, step: 0.1 },
-  { name: 'weight', label: '체중', unit: 'kg', max: 500, step: 0.1 },
-  { name: 'age', label: '나이', prefix: '(만)', unit: '세', max: 120, step: 1 },
+  { name: 'height', label: '신장', unit: 'cm', min: 51, max: 249 },
+  { name: 'weight', label: '체중', unit: 'kg', min: 11, max: 299 },
+  { name: 'age', label: '나이', prefix: '(만)', unit: '세', min: 6, max: 100 },
 ]
 
 // ?edit=body · ?edit=time 으로 들어오면 그 단계만 고치고 프로필로 돌아가요.
@@ -96,6 +98,7 @@ export default function SignupPage() {
   const [step, setStep] = useState(() => editStep ?? (profile.goal ? 1 : 0))
   const [period, setPeriod] = useState(() => profile.unavailablePeriod ?? defaultPeriod)
   const [message, setMessage] = useState('')
+  const [isSaving, setIsSaving] = useState(false)
   const headingRef = useRef(null)
   const navigate = useNavigate()
 
@@ -124,8 +127,8 @@ export default function SignupPage() {
       localStorage.setItem('demo-profile', JSON.stringify({
         ...nextProfile,
         name: nextProfile.name.trim(),
-        height: Number(nextProfile.height),
-        weight: Number(nextProfile.weight),
+        height: Math.round(Number(nextProfile.height)),
+        weight: Math.round(Number(nextProfile.weight)),
         age: Number(nextProfile.age),
       }))
       return true
@@ -136,9 +139,18 @@ export default function SignupPage() {
   }
 
   // 시간대만 고치는 중이면 바로 저장하고 프로필로, 아니면 신체 정보 단계로
-  function finishPeriod(unavailablePeriod) {
+  async function finishPeriod(unavailablePeriod) {
     if (editStep === 5) {
+      setIsSaving(true)
+      try {
+        await saveUnavailablePeriod(unavailablePeriod)
+      } catch (error) {
+        setMessage(error.message)
+        setIsSaving(false)
+        return
+      }
       if (persist({ ...profile, unavailablePeriod })) navigate('/profile')
+      setIsSaving(false)
       return
     }
 
@@ -182,10 +194,22 @@ export default function SignupPage() {
     finishPeriod(null)
   }
 
-  function saveProfile(event) {
+  // 서버에 먼저 저장하고, 성공하면 이 기기에도 저장해요.
+  async function saveProfile(event) {
     event.preventDefault()
+    setIsSaving(true)
+
+    try {
+      await saveInfo(bodyInfo(profile))
+      if (!editStep) await saveUnavailablePeriod(profile.unavailablePeriod)
+    } catch (error) {
+      setMessage(error.message)
+      setIsSaving(false)
+      return
+    }
 
     if (persist(profile)) navigate(editStep ? '/profile' : '/setup/inbody')
+    setIsSaving(false)
   }
 
   const backButton = (
@@ -262,7 +286,7 @@ export default function SignupPage() {
             <button className="fit-setup__choice" type="button" aria-pressed={Boolean(profile.unavailablePeriod)} onClick={() => goTo(6)}>
               네, 시간대를 선택할게요
             </button>
-            <button className="fit-setup__choice" type="button" onClick={skipPeriod}>없어요, 다음으로</button>
+            <button className="fit-setup__choice" type="button" onClick={skipPeriod} disabled={isSaving}>없어요, 다음으로</button>
             {backButton}
           </div>
         </div>
@@ -281,7 +305,7 @@ export default function SignupPage() {
             <TimeScrubber label="종료" value={period.endTime} onChange={(endTime) => setPeriod((previous) => ({ ...previous, endTime }))} />
           </div>
           <div className="fit-setup__options">
-            <button className="fit-setup__choice" type="button" onClick={confirmPeriod}>선택 완료</button>
+            <button className="fit-setup__choice" type="button" onClick={confirmPeriod} disabled={isSaving}>선택 완료</button>
             {backButton}
           </div>
         </div>
@@ -298,13 +322,13 @@ export default function SignupPage() {
                   {field.prefix && <small>{field.prefix}</small>}
                   <input
                     type="number"
-                    inputMode="decimal"
+                    inputMode="numeric"
                     name={field.name}
                     value={profile[field.name]}
                     onChange={(event) => update(field.name, event.target.value)}
-                    min={1}
+                    min={field.min}
                     max={field.max}
-                    step={field.step}
+                    step={1}
                     placeholder="0"
                     required
                   />
@@ -318,13 +342,12 @@ export default function SignupPage() {
                 <option value="" disabled>선택</option>
                 <option value="male">남성</option>
                 <option value="female">여성</option>
-                <option value="none">선택 안 함</option>
               </select>
             </label>
           </div>
           <p className="fit-setup__privacy">입력한 정보는 운동 계획 추천에만 사용돼요.</p>
           <div className="fit-setup__options">
-            <button className="fit-setup__choice" type="submit">완료</button>
+            <button className="fit-setup__choice" type="submit" disabled={isSaving}>{isSaving ? '저장하는 중...' : '완료'}</button>
             {backButton}
           </div>
         </form>

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router'
+import { inbodyInfo, saveInfo } from '../api/profile.js'
 import SetupProgress from '../components/SetupProgress.jsx'
 import UploadPanel from '../components/UploadPanel.jsx'
 import { useImageFile } from '../hooks/useImageFile.js'
@@ -15,6 +16,7 @@ export default function InbodySetupPage() {
   const [form, setForm] = useState(loadInbody)
   const [isFormOpen, setIsFormOpen] = useState(() => fromProfile && Boolean(form.measuredAt))
   const [message, setMessage] = useState('')
+  const [isSaving, setIsSaving] = useState(false)
   const firstFieldRef = useRef(null)
   const { image, inputRef, selectFile, clear } = useImageFile(setMessage)
 
@@ -35,13 +37,16 @@ export default function InbodySetupPage() {
     setMessage('')
   }
 
-  function submit(event) {
+  async function submit(event) {
     event.preventDefault()
+    setIsSaving(true)
 
     try {
+      await saveInfo(inbodyInfo(form))
       saveInbody(form)
-    } catch {
-      setMessage('저장하지 못했어요. 다시 시도해 주세요.')
+    } catch (error) {
+      setMessage(error.message ?? '저장하지 못했어요. 다시 시도해 주세요.')
+      setIsSaving(false)
       return
     }
 
@@ -80,17 +85,19 @@ export default function InbodySetupPage() {
           <form className="fit-setup__fields fit-setup__panel" onSubmit={submit}>
             <label>
               체지방률 (%)
-              <input ref={firstFieldRef} type="number" inputMode="decimal" name="bodyFat" value={form.bodyFat} onChange={handleChange} min="0.1" max="100" step="0.1" required />
+              <input ref={firstFieldRef} type="number" inputMode="decimal" name="bodyFat" value={form.bodyFat} onChange={handleChange} min="0.1" max="79.9" step="0.1" required />
             </label>
             <label>
               골격근량 (kg)
-              <input type="number" inputMode="decimal" name="muscleMass" value={form.muscleMass} onChange={handleChange} min="0.1" step="0.1" required />
+              <input type="number" inputMode="decimal" name="muscleMass" value={form.muscleMass} onChange={handleChange} min="0.1" max="99.9" step="0.1" required />
             </label>
             <label>
               측정일
               <input type="date" name="measuredAt" value={form.measuredAt} onChange={handleChange} max={todayText()} required />
             </label>
-            <button className="fit-setup__add" type="submit">{fromProfile ? '저장' : '저장하고 다음'}</button>
+            <button className="fit-setup__add" type="submit" disabled={isSaving}>
+              {isSaving ? '저장하는 중...' : fromProfile ? '저장' : '저장하고 다음'}
+            </button>
           </form>
         )}
 

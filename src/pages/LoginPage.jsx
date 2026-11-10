@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Navigate, useNavigate } from 'react-router'
-import { getMe, login, loginIdPattern, signup } from '../api/auth.js'
+import { login, loginIdPattern, signup } from '../api/auth.js'
+import { clearLocalData, hydrateFromServer } from '../api/profile.js'
 import { getToken } from '../api/client.js'
 import './SignupPage.css'
 import './LoginPage.css'
@@ -46,6 +47,9 @@ export default function LoginPage() {
 
     setIsSubmitting(true)
     try {
+      // 이전 사용자의 기기 캐시가 섞이지 않게 비워요.
+      clearLocalData()
+
       if (isJoin) {
         await signup(form.name, form.password)
         navigate('/signup', { replace: true })
@@ -53,7 +57,7 @@ export default function LoginPage() {
       }
 
       await login(form.name, form.password)
-      const me = await getMe()
+      const me = await hydrateFromServer()
       navigate(me?.info ? '/' : '/signup', { replace: true })
     } catch (error) {
       setMessage(error.message)

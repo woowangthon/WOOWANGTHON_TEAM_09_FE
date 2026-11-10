@@ -1,4 +1,5 @@
 import { api, clearToken, setToken } from './client.js'
+import { clearLocalData } from './profile.js'
 
 export const loginIdPattern = /^[a-z][a-z0-9]{3,19}$/
 
@@ -19,4 +20,5 @@ export function getMe() {
 
 export function logout() {
   clearToken()
+  clearLocalData()
 }
