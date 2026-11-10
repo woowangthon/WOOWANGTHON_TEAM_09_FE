@@ -58,6 +58,7 @@
   color: inherit;
   font: 700 clamp(23px, 6.8vw, 28px)/1.28 system-ui, 'Malgun Gothic', sans-serif;
   letter-spacing: -0.045em;
+  word-break: keep-all;
 }
 
 .fit-setup__welcome {
@@ -115,7 +116,8 @@
   color: var(--setup-muted);
 }
 
-.fit-setup__fields input {
+.fit-setup__fields input,
+.fit-setup__fields select {
   box-sizing: border-box;
   width: 100%;
   min-height: 46px;
@@ -170,4 +172,9 @@
 
 .fit-setup h1:focus {
   outline: none;
+}
+
+.fit-setup__hint {
+  margin-bottom: 4px;
+  color: var(--setup-muted);
 }

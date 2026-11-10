@@ -1,8 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
+import { getUnavailablePeriod } from '../workoutAvailability.js'
+import { weekdays } from '../workoutPlan.js'
 import './SignupPage.css'
 
+const emptyPeriod = { weekday: '', startTime: '', endTime: '' }
+
 const initialProfile = {
+  unavailablePeriod: emptyPeriod,
   goal: '',
   experience: '',
   environment: '',
@@ -38,6 +43,7 @@ function loadProfile() {
       height: Number.isFinite(profile.height) ? String(profile.height) : '',
       weight: Number.isFinite(profile.weight) ? String(profile.weight) : '',
       age: Number.isInteger(profile.age) ? String(profile.age) : '',
+      unavailablePeriod: getUnavailablePeriod(profile.unavailablePeriod) ?? emptyPeriod,
     }
   } catch {
     return initialProfile
@@ -81,7 +87,8 @@ const bodyFields = [
   { name: 'age', label: '만 나이', max: 120, step: 1 },
 ]
 
-const lastStep = choiceSteps.length + 1
+const availabilityStep = choiceSteps.length + 1
+const lastStep = availabilityStep + 1
 
 export default function SignupPage() {
   const [profile, setProfile] = useState(loadProfile)
@@ -92,7 +99,9 @@ export default function SignupPage() {
 
   const question = choiceSteps[step - 1]
   const isWelcome = step === 0
+  const isAvailabilityStep = step === availabilityStep
   const isLastStep = step === lastStep
+  const period = profile.unavailablePeriod
 
   useEffect(() => {
     headingRef.current?.focus()
@@ -104,8 +113,23 @@ export default function SignupPage() {
     setMessage('')
   }
 
+  function handlePeriodChange(event) {
+    const { name, value } = event.target
+
+    setProfile((previous) => ({
+      ...previous,
+      unavailablePeriod: { ...previous.unavailablePeriod, [name]: value },
+    }))
+    setMessage('')
+  }
+
   function handleSubmit(event) {
     event.preventDefault()
+
+    if (isAvailabilityStep && period.weekday && !getUnavailablePeriod(period)) {
+      setMessage('종료 시간은 시작 시간보다 늦어야 해요.')
+      return
+    }
 
     if (!isLastStep) {
       setStep((previous) => previous + 1)
@@ -117,6 +141,7 @@ export default function SignupPage() {
       height: Number(profile.height),
       weight: Number(profile.weight),
       age: Number(profile.age),
+      unavailablePeriod: getUnavailablePeriod(period),
     }
 
     try {
@@ -150,7 +175,7 @@ export default function SignupPage() {
 
       <form onSubmit={handleSubmit} className={isWelcome ? 'fit-setup__welcome' : undefined}>
         <h1 id="setup-title" ref={headingRef} tabIndex={-1}>
-          {isWelcome ? '안녕하세요!' : question?.title ?? '기본 신체 정보를 입력해 주세요.'}
+          {isWelcome ? '안녕하세요!' : question?.title ?? (isAvailabilityStep ? '운동하기 어려운 시간대가 있나요?' : '기본 신체 정보를 입력해 주세요.')}
         </h1>
 
         {isWelcome && <p>운동 목표와 환경을 등록하고 내 운동 프로필을 만들어 보세요.</p>}
@@ -171,6 +196,33 @@ export default function SignupPage() {
               </label>
             ))}
           </fieldset>
+        )}
+
+        {isAvailabilityStep && (
+          <div className="fit-setup__fields">
+            <p className="fit-setup__hint">달력에서 운동 시간을 바꿀 때 매주 이 시간대를 제외해요.</p>
+            <label>
+              요일
+              <select name="weekday" value={period.weekday} onChange={handlePeriodChange}>
+                <option value="">제한 없음</option>
+                {weekdays.map((day, index) => (
+                  <option key={day} value={index}>{day}요일</option>
+                ))}
+              </select>
+            </label>
+            {period.weekday && (
+              <>
+                <label>
+                  시작 시간
+                  <input type="time" name="startTime" value={period.startTime} onChange={handlePeriodChange} required />
+                </label>
+                <label>
+                  종료 시간
+                  <input type="time" name="endTime" value={period.endTime} onChange={handlePeriodChange} required />
+                </label>
+              </>
+            )}
+          </div>
         )}
 
         {isLastStep && (

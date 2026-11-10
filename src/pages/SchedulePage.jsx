@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 import FitNavigation from '../components/FitNavigation.jsx'
 import { getStatus, getValidRecord, loadPlan, loadRecords, savePlan, weekdays } from '../workoutPlan.js'
+import { loadUnavailablePeriod, withUnavailablePeriod } from '../workoutAvailability.js'
 import './SchedulePage.css'
 
 const STORAGE_KEY = 'demo-schedules'
@@ -122,11 +123,15 @@ function WorkoutConflict({ workout, conflicts, options, hasRecord, onConfirm }) 
 
   return (
     <div className="fit-calendar__conflict">
-      <h3>운동 시간이 생활 일정과 겹쳐요</h3>
+      <h3>
+        {conflicts.some((schedule) => schedule.isUnavailable)
+          ? '운동하기 어려운 시간과 겹쳐요'
+          : '운동 시간이 생활 일정과 겹쳐요'}
+      </h3>
       <p>현재 운동 시간 {workout.time} ~ {minutesToTime(timeToMinutes(workout.time) + workout.duration)}</p>
       <ul>
         {conflicts.map((schedule) => (
-          <li key={schedule.id}>
+          <li key={schedule.isUnavailable ? 'unavailable-period' : schedule.id}>
             {schedule.title} · {schedule.startTime} ~ {schedule.endTime}
           </li>
         ))}
@@ -229,6 +234,7 @@ export default function SchedulePage() {
   const [schedules, setSchedules] = useState(loadSchedules)
   const [plan, setPlan] = useState(loadPlan)
   const [records] = useState(loadRecords)
+  const [unavailablePeriod] = useState(loadUnavailablePeriod)
   const [form, setForm] = useState(() => ({ ...initialForm, date: dateKey(today) }))
   const [message, setMessage] = useState('')
   const [workoutMessage, setWorkoutMessage] = useState('')
@@ -239,20 +245,22 @@ export default function SchedulePage() {
   const workoutRecord = workout ? getValidRecord(records, plan.id, workout.id) : null
   const workoutStatus = workout ? getStatus(workoutRecord) : null
   const workoutStart = workout ? timeToMinutes(workout.time) : 0
-  const conflicts = workout ? selectedSchedules.filter((schedule) =>
+  const busyPeriods = withUnavailablePeriod(selectedSchedules, unavailablePeriod, selectedDate)
+  const conflicts = workout ? busyPeriods.filter((schedule) =>
     overlaps(workoutStart, workoutStart + workout.duration, {
       start: timeToMinutes(schedule.startTime),
       end: timeToMinutes(schedule.endTime),
     })
   ) : []
   const options = conflicts.length && !workoutRecord
-    ? getChangeOptions(plan, workout, selectedKey, selectedSchedules, today)
+    ? getChangeOptions(plan, workout, selectedKey, busyPeriods, today)
     : []
 
   function changeWorkoutTime(time) {
     const currentPlan = loadPlan()
     const currentWorkout = workoutForDate(currentPlan, selectedDate)
     const currentSchedules = loadSchedules().filter((schedule) => schedule.date === selectedKey)
+    const currentBusyPeriods = withUnavailablePeriod(currentSchedules, loadUnavailablePeriod(), selectedDate)
 
     if (
       !currentWorkout ||
@@ -260,7 +268,7 @@ export default function SchedulePage() {
       currentWorkout.id !== workout.id ||
       currentWorkout.time !== workout.time ||
       getValidRecord(loadRecords(), currentPlan.id, currentWorkout.id) ||
-      !getChangeOptions(currentPlan, currentWorkout, selectedKey, currentSchedules, new Date())
+      !getChangeOptions(currentPlan, currentWorkout, selectedKey, currentBusyPeriods, new Date())
         .some((option) => option.label === time)
     ) {
       setWorkoutMessage('일정이 바뀌었어요. 화면을 새로 열고 다시 확인해 주세요.')

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import FitNavigation from '../components/FitNavigation.jsx'
+import { getUnavailablePeriod, getUnavailableTimeLabel } from '../workoutAvailability.js'
 import './ProfilePage.css'
 
 const goalLabels = {
@@ -302,6 +303,7 @@ export default function ProfilePage() {
               <div><dt>운동 목표</dt><dd>{goalLabels[profile.goal]}</dd></div>
               <div><dt>운동 경험</dt><dd>{experienceLabels[profile.experience]}</dd></div>
               <div><dt>운동 환경</dt><dd>{environmentLabels[profile.environment]}</dd></div>
+              <div><dt>운동하기 어려운 시간</dt><dd>{getUnavailableTimeLabel(getUnavailablePeriod(profile.unavailablePeriod))}</dd></div>
             </dl>
           </section>
         </>
