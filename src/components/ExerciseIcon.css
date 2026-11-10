@@ -1,0 +1,14 @@
+.fit-exercise-icon {
+  display: grid;
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border-radius: 50%;
+  background: #000;
+}
+
+.fit-exercise-icon svg {
+  width: 26px;
+  height: 26px;
+}

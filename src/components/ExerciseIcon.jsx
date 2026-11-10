@@ -1,3 +1,5 @@
+import './ExerciseIcon.css'
+
 // 운동 종목 아이콘 (검은 원 + 민트색 선 인체)
 const figures = {
   squat: (

@@ -183,3 +183,22 @@ export function createPlan(blockedPeriods = [], variant = 0) {
     }),
   }
 }
+
+const RECORDS_KEY = 'demo-session-records'
+
+// 종목 체크 상태로 운동 기록을 저장하고 저장한 기록을 돌려줘요. (운동 기록 화면과 같은 형식)
+export function saveSessionRecord(planId, session, exercises) {
+  const completedIds = exercises.filter((exercise) => exercise.completed).map((exercise) => exercise.id)
+  const record = {
+    planId,
+    sessionId: session.id,
+    title: session.title,
+    status: getStatus({ exercises }),
+    completedIds,
+    exercises,
+    savedAt: new Date().toISOString(),
+  }
+
+  localStorage.setItem(RECORDS_KEY, JSON.stringify({ ...loadRecords(), [`${planId}:${session.id}`]: record }))
+  return record
+}
