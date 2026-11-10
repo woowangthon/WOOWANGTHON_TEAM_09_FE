@@ -126,33 +126,36 @@ function toTime(minutes) {
   return `${hours}:${String(minutes % 60).padStart(2, '0')}`
 }
 
-// 운동하기 어려운 시간과 겹치는 세션을 그 시간 직후(불가하면 직전)로 옮겨요.
-export function createPlan(unavailablePeriod) {
-  if (!unavailablePeriod) return examplePlan
+// 운동하기 어려운 시간·수업 시간과 겹치는 세션을 같은 날 가장 가까운 빈 시간으로 옮겨요.
+export function createPlan(blockedPeriods = []) {
+  const blocks = blockedPeriods.filter(Boolean).map((period) => ({
+    day: `${weekdays[Number(period.weekday)]}요일`,
+    start: toMinutes(period.startTime),
+    end: toMinutes(period.endTime),
+  }))
 
-  const blockedDay = `${weekdays[Number(unavailablePeriod.weekday)]}요일`
-  const blockedStart = toMinutes(unavailablePeriod.startTime)
-  const blockedEnd = toMinutes(unavailablePeriod.endTime)
+  if (blocks.length === 0) return examplePlan
 
   return {
     ...examplePlan,
     sessions: examplePlan.sessions.map((session) => {
+      const dayBlocks = blocks.filter((block) => block.day === session.day)
+      const isFree = (start) =>
+        start >= DAY_START &&
+        start + session.duration <= DAY_END &&
+        dayBlocks.every((block) => start + session.duration <= block.start || start >= block.end)
       const start = toMinutes(session.time)
-      const end = start + session.duration
 
-      if (session.day !== blockedDay || end <= blockedStart || start >= blockedEnd) {
-        return session
-      }
+      if (isFree(start)) return session
 
-      if (blockedEnd + session.duration <= DAY_END) {
-        return { ...session, time: toTime(blockedEnd), adjusted: true }
-      }
+      const candidates = dayBlocks
+        .flatMap((block) => [block.end, block.start - session.duration])
+        .filter(isFree)
+        .sort((a, b) => Math.abs(a - start) - Math.abs(b - start) || b - a)
 
-      if (blockedStart - session.duration >= DAY_START) {
-        return { ...session, time: toTime(blockedStart - session.duration), adjusted: true }
-      }
-
-      return session
+      return candidates.length
+        ? { ...session, time: toTime(candidates[0]), adjusted: true }
+        : session
     }),
   }
 }

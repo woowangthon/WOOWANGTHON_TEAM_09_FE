@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import FitNavigation from '../components/FitNavigation.jsx'
 import { getUnavailablePeriod, getUnavailableTimeLabel } from '../workoutAvailability.js'
+import { loadTimetable } from '../timetable.js'
 import './ProfilePage.css'
 
 const goalLabels = {
@@ -265,6 +266,7 @@ function InbodySection() {
 
 export default function ProfilePage() {
   const [profile] = useState(loadProfile)
+  const [timetableCount] = useState(() => loadTimetable().length)
 
   return (
     <div className="fit-profile">
@@ -312,6 +314,13 @@ export default function ProfilePage() {
       <section className="fit-profile__group" aria-labelledby="profile-manage">
         <h2 id="profile-manage">정보 관리</h2>
         <InbodySection />
+        <Link className="fit-profile__card fit-profile__row-link" to="/setup/timetable?from=profile">
+          <span>
+            <strong>주간 시간표 관리</strong>
+            <small>{timetableCount ? `등록한 수업 ${timetableCount}개` : '수업 시간 등록하기'}</small>
+          </span>
+          <span aria-hidden="true">›</span>
+        </Link>
         <Link className="fit-profile__card fit-profile__row-link" to="/schedule">
           <span>
             <strong>생활 일정 관리</strong>

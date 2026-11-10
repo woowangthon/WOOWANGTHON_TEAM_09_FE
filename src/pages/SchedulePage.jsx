@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
+import TimeSelect from '../components/TimeSelect.jsx'
 import FitNavigation from '../components/FitNavigation.jsx'
 import { getStatus, getValidRecord, loadPlan, loadRecords, savePlan, weekdays } from '../workoutPlan.js'
 import { loadUnavailablePeriod, withUnavailablePeriod } from '../workoutAvailability.js'
+import { loadTimetable, withTimetable } from '../timetable.js'
 import './SchedulePage.css'
 
 const STORAGE_KEY = 'demo-schedules'
@@ -126,13 +128,15 @@ function WorkoutConflict({ workout, conflicts, options, hasRecord, onConfirm }) 
       <h3>
         {conflicts.some((schedule) => schedule.isUnavailable)
           ? '운동하기 어려운 시간과 겹쳐요'
-          : '운동 시간이 생활 일정과 겹쳐요'}
+          : conflicts.every((schedule) => schedule.isClass)
+            ? '운동 시간이 수업과 겹쳐요'
+            : '운동 시간이 생활 일정과 겹쳐요'}
       </h3>
       <p>현재 운동 시간 {workout.time} ~ {minutesToTime(timeToMinutes(workout.time) + workout.duration)}</p>
       <ul>
         {conflicts.map((schedule) => (
           <li key={schedule.isUnavailable ? 'unavailable-period' : schedule.id}>
-            {schedule.title} · {schedule.startTime} ~ {schedule.endTime}
+            {schedule.isClass ? `수업 · ${schedule.title}` : schedule.title} · {schedule.startTime} ~ {schedule.endTime}
           </li>
         ))}
       </ul>
@@ -235,6 +239,7 @@ export default function SchedulePage() {
   const [plan, setPlan] = useState(loadPlan)
   const [records] = useState(loadRecords)
   const [unavailablePeriod] = useState(loadUnavailablePeriod)
+  const [timetable] = useState(loadTimetable)
   const [form, setForm] = useState(() => ({ ...initialForm, date: dateKey(today) }))
   const [message, setMessage] = useState('')
   const [workoutMessage, setWorkoutMessage] = useState('')
@@ -245,7 +250,7 @@ export default function SchedulePage() {
   const workoutRecord = workout ? getValidRecord(records, plan.id, workout.id) : null
   const workoutStatus = workout ? getStatus(workoutRecord) : null
   const workoutStart = workout ? timeToMinutes(workout.time) : 0
-  const busyPeriods = withUnavailablePeriod(selectedSchedules, unavailablePeriod, selectedDate)
+  const busyPeriods = withUnavailablePeriod(withTimetable(selectedSchedules, timetable, selectedDate), unavailablePeriod, selectedDate)
   const conflicts = workout ? busyPeriods.filter((schedule) =>
     overlaps(workoutStart, workoutStart + workout.duration, {
       start: timeToMinutes(schedule.startTime),
@@ -260,7 +265,7 @@ export default function SchedulePage() {
     const currentPlan = loadPlan()
     const currentWorkout = workoutForDate(currentPlan, selectedDate)
     const currentSchedules = loadSchedules().filter((schedule) => schedule.date === selectedKey)
-    const currentBusyPeriods = withUnavailablePeriod(currentSchedules, loadUnavailablePeriod(), selectedDate)
+    const currentBusyPeriods = withUnavailablePeriod(withTimetable(currentSchedules, loadTimetable(), selectedDate), loadUnavailablePeriod(), selectedDate)
 
     if (
       !currentWorkout ||
@@ -438,14 +443,8 @@ export default function SchedulePage() {
             <input type="date" name="date" value={form.date} onChange={handleChange} required />
           </label>
           <div className="fit-calendar__times">
-            <label>
-              시작 시간
-              <input type="time" name="startTime" value={form.startTime} onChange={handleChange} required />
-            </label>
-            <label>
-              종료 시간
-              <input type="time" name="endTime" value={form.endTime} onChange={handleChange} required />
-            </label>
+            <TimeSelect label="시작 시간" name="startTime" value={form.startTime} onChange={handleChange} required />
+            <TimeSelect label="종료 시간" name="endTime" value={form.endTime} onChange={handleChange} required />
           </div>
           <button type="submit" className="fit-calendar__action">일정 추가</button>
         </form>

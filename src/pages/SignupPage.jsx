@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
+import TimeSelect from '../components/TimeSelect.jsx'
 import { getUnavailablePeriod } from '../workoutAvailability.js'
 import { weekdays } from '../workoutPlan.js'
 import './SignupPage.css'
@@ -151,7 +152,7 @@ export default function SignupPage() {
       return
     }
 
-    navigate('/plan/generate')
+    navigate('/setup/timetable')
   }
 
   function goBack() {
@@ -212,14 +213,8 @@ export default function SignupPage() {
             </label>
             {period.weekday && (
               <>
-                <label>
-                  시작 시간
-                  <input type="time" name="startTime" value={period.startTime} onChange={handlePeriodChange} required />
-                </label>
-                <label>
-                  종료 시간
-                  <input type="time" name="endTime" value={period.endTime} onChange={handlePeriodChange} required />
-                </label>
+                <TimeSelect label="시작 시간" name="startTime" value={period.startTime} onChange={handlePeriodChange} required />
+                <TimeSelect label="종료 시간" name="endTime" value={period.endTime} onChange={handlePeriodChange} required />
               </>
             )}
           </div>
@@ -247,7 +242,7 @@ export default function SignupPage() {
 
         <div className="fit-setup__actions">
           <button className="fit-setup__primary" type="submit">
-            {isWelcome ? '시작하기' : isLastStep ? '저장하고 맞춤 계획 만들기' : '다음'}
+            {isWelcome ? '시작하기' : isLastStep ? '저장하고 다음' : '다음'}
           </button>
           {!isWelcome && (
             <button className="fit-setup__back" type="button" onClick={goBack}>이전</button>

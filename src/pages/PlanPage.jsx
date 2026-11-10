@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 import FitNavigation from '../components/FitNavigation.jsx'
 import { createPlan, loadPlan, savePlan } from '../workoutPlan.js'
-import { getUnavailableTimeLabel, loadUnavailablePeriod } from '../workoutAvailability.js'
+import { loadUnavailablePeriod } from '../workoutAvailability.js'
+import { loadTimetable } from '../timetable.js'
 import { exampleRoutines } from '../workoutRoutines.js'
 import './PlanPage.css'
 
@@ -11,10 +12,11 @@ export default function PlanPage() {
     const saved = loadPlan()
     return typeof saved?.approvedAt === 'string' ? saved : null
   })
-  const [unavailablePeriod] = useState(loadUnavailablePeriod)
+  const [blockedPeriods] = useState(() => [loadUnavailablePeriod(), ...loadTimetable()].filter(Boolean))
   const [message, setMessage] = useState('')
 
-  const draftPlan = createPlan(unavailablePeriod)
+  const draftPlan = createPlan(blockedPeriods)
+  const adjustedCount = draftPlan.sessions.filter((session) => session.adjusted).length
   const { sessions } = approvedPlan ?? draftPlan
   const totalMinutes = sessions.reduce(
     (total, session) => total + session.duration,
@@ -42,9 +44,11 @@ export default function PlanPage() {
         <span className="fit-plan__eyebrow">{approvedPlan ? '승인한 계획' : '맞춤 계획'}</span>
         <h1>주간 운동 계획</h1>
         <p>주 {sessions.length}회 · 총 {totalMinutes}분</p>
-        {!approvedPlan && unavailablePeriod && (
+        {!approvedPlan && blockedPeriods.length > 0 && (
           <p className="fit-plan__notice">
-            운동하기 어려운 시간({getUnavailableTimeLabel(unavailablePeriod)})을 피해서 구성했어요.
+            {adjustedCount
+              ? `수업·운동하기 어려운 시간과 겹치는 운동 ${adjustedCount}개의 시간을 조정했어요.`
+              : '수업·운동하기 어려운 시간과 겹치는 운동이 없어 기본 시간으로 구성했어요.'}
           </p>
         )}
       </header>
