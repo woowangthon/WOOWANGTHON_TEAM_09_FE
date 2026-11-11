@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
-import { dayLabel, loadPeriod } from '../api/plan.js'
+import { dayLabel, loadPeriod, withExerciseChecked } from '../api/plan.js'
 import { conflictMessage, createSchedule, deleteSchedule, replaceSchedule } from '../api/schedule.js'
 import FitNavigation from '../components/FitNavigation.jsx'
 import MissedWorkoutCard from '../components/MissedWorkoutCard.jsx'
 import TimeSelect from '../components/TimeSelect.jsx'
+import WorkoutChecklist from '../components/WorkoutChecklist.jsx'
 import { getBusyPeriods, getFreeSlots, toTime } from '../freeTime.js'
 import { useAsync } from '../hooks/useAsync.js'
 import { addDays, dateKey, formatKoreanTime, weekdays, weekRange } from '../workoutPlan.js'
@@ -89,7 +90,7 @@ export default function SchedulePage() {
   // 달력에 보이는 달 + Day A/B 계산용으로 그 달에 걸친 주 전체를 불러와요.
   const rangeStart = weekRange(month).start
   const rangeEnd = weekRange(new Date(month.getFullYear(), month.getMonth() + 1, 0)).end
-  const { data, error, loading, reload } = useAsync(() => loadPeriod(rangeStart, rangeEnd), [dateKey(rangeStart), dateKey(rangeEnd)])
+  const { data, error, loading, reload, setData } = useAsync(() => loadPeriod(rangeStart, rangeEnd), [dateKey(rangeStart), dateKey(rangeEnd)])
 
   const sessions = data?.sessions ?? []
   const life = data?.life ?? []
@@ -141,6 +142,10 @@ export default function SchedulePage() {
     } catch (caught) {
       setWorkoutMessage(caught.status === 409 ? conflictMessage(caught) : caught.message)
     }
+  }
+
+  function updateExercise(sessionId, exerciseId, completed) {
+    setData((previous) => ({ ...previous, sessions: withExerciseChecked(previous.sessions, sessionId, exerciseId, completed) }))
   }
 
   function handleChange(event) {
@@ -221,7 +226,12 @@ export default function SchedulePage() {
           {state === 'missed' && ' · 하지 못했어요'}
         </p>
         {isToday ? (
-          <Link className="fit-calendar__action" to="/">운동 완료 기록</Link>
+          <WorkoutChecklist session={session} onExerciseChange={updateExercise}>
+            <p className="fit-calendar__summary">
+              {session.exercises.slice(0, 2).map((exercise) => <span key={exercise.id}>{exercise.name} {exercise.detail}</span>)}
+              {session.exercises.length > 2 && <span>외 {session.exercises.length - 2}개</span>}
+            </p>
+          </WorkoutChecklist>
         ) : (
           <Link className="fit-calendar__action" to={`/plan/${session.id}`}>운동 상세 보기</Link>
         )}

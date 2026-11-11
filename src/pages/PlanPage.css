@@ -21,7 +21,7 @@
   padding: max(28px, env(safe-area-inset-top)) 20px calc(32px + env(safe-area-inset-bottom));
   color: #fafafa;
   color-scheme: dark;
-  font: 14px/1.45 system-ui, 'Malgun Gothic', sans-serif;
+  font: 14px/1.45 var(--sans);
   text-align: left;
 }
 
@@ -41,7 +41,7 @@
 .fit-plan h1 {
   margin: 0 0 6px;
   color: inherit;
-  font: 800 24px/1.3 system-ui, 'Malgun Gothic', sans-serif;
+  font: 800 24px/1.3 var(--sans);
   letter-spacing: -0.04em;
 }
 

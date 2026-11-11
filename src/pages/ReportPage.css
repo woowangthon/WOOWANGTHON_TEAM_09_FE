@@ -17,7 +17,7 @@
   padding: max(56px, env(safe-area-inset-top)) 20px calc(120px + env(safe-area-inset-bottom));
   color: #fafafa;
   color-scheme: dark;
-  font: 14px/1.45 system-ui, 'Malgun Gothic', sans-serif;
+  font: 14px/1.45 var(--sans);
   text-align: left;
 }
 
@@ -95,28 +95,6 @@
   font-size: 11px;
 }
 
-.fit-report__card .fit-report__feedback-title {
-  margin-top: 22px;
-}
-
-.fit-report__feedback {
-  display: grid;
-  gap: 8px;
-  margin: 8px 0 0;
-  padding: 0 0 0 10px;
-  list-style: none;
-}
-
-.fit-report__feedback li {
-  display: grid;
-  font-size: 12px;
-}
-
-.fit-report__feedback small {
-  color: var(--report-muted);
-  font-size: 11px;
-}
-
 .fit-report__empty {
   margin: 6px 0 0;
   color: var(--report-muted);
@@ -142,7 +120,7 @@
   list-style: none;
 }
 
-.fit-report__next a {
+.fit-report__next li > a {
   display: flex;
   box-sizing: border-box;
   min-height: 62px;
@@ -157,7 +135,7 @@
   text-decoration: none;
 }
 
-.fit-report__next a > span:first-child {
+.fit-report__next li > a > span:first-child {
   display: grid;
   gap: 6px;
 }

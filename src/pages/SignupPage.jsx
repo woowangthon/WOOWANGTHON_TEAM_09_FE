@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router'
 import { bodyInfo, saveInfo } from '../api/profile.js'
 import { saveUnavailablePeriod } from '../api/weeklyBlocks.js'
 import SetupProgress from '../components/SetupProgress.jsx'
+import { savePrefs } from '../userPrefs.js'
 import TimeScrubber from '../components/TimeScrubber.jsx'
 import { crossesMidnight, getUnavailablePeriod } from '../workoutAvailability.js'
 import './SignupPage.css'
@@ -94,6 +95,8 @@ const editSteps = { body: 7, time: 5 }
 export default function SignupPage() {
   const [searchParams] = useSearchParams()
   const [profile, setProfile] = useState(loadProfile)
+  // 이미 프로필이 있으면 수정 중이에요. 첫 화면에서 뒤로 가면 시작 화면이 아니라 프로필로 돌아가요.
+  const [isEditing] = useState(() => Boolean(profile.goal))
   const [editStep] = useState(() => (profile.goal ? editSteps[searchParams.get('edit')] : undefined))
   const [step, setStep] = useState(() => editStep ?? (profile.goal ? 1 : 0))
   const [period, setPeriod] = useState(() => profile.unavailablePeriod ?? defaultPeriod)
@@ -114,7 +117,7 @@ export default function SignupPage() {
   }
 
   function goBack() {
-    if (step === editStep) {
+    if (step === editStep || (isEditing && step === 1)) {
       navigate('/profile')
       return
     }
@@ -131,6 +134,13 @@ export default function SignupPage() {
         weight: Math.round(Number(nextProfile.weight)),
         age: Number(nextProfile.age),
       }))
+      // 서버에 없는 값은 아이디별로 따로 보관해서 로그아웃해도 남겨요.
+      savePrefs({
+        name: nextProfile.name.trim(),
+        goal: nextProfile.goal,
+        environment: nextProfile.environment,
+        unavailablePeriod: nextProfile.unavailablePeriod,
+      })
       return true
     } catch {
       setMessage('저장하지 못했어요. 다시 시도해 주세요.')

@@ -17,7 +17,7 @@
   padding: max(56px, env(safe-area-inset-top)) 20px calc(120px + env(safe-area-inset-bottom));
   color: #fafafa;
   color-scheme: dark;
-  font: 14px/1.45 system-ui, 'Malgun Gothic', sans-serif;
+  font: 14px/1.45 var(--sans);
   text-align: left;
 }
 

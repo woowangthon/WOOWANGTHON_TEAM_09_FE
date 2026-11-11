@@ -1,6 +1,6 @@
 import { api } from './client.js'
-import { refreshTimetable } from './weeklyBlocks.js'
-import { readStorage } from '../workoutPlan.js'
+import { listBlocks, readUnavailablePeriod, refreshTimetable } from './weeklyBlocks.js'
+import { loadPrefs, savePrefs } from '../userPrefs.js'
 
 // 운동 경험: 앱 선택지 ↔ 서버 자유 입력 문장
 export const experienceText = {
@@ -38,16 +38,17 @@ export function inbodyInfo(form) {
 
 // 로그인 직후: 서버 정보를 이 기기 캐시(프로필·인바디·시간표)에 채워요. 서버에 없는 이름·목표 등은 기존 값을 유지해요.
 export async function hydrateFromServer() {
-  const me = await api('/user')
+  const [me, blocks] = await Promise.all([api('/user'), listBlocks()])
   const info = me?.info
+  const prefs = loadPrefs(me.name)
+  const unavailablePeriod = prefs.unavailablePeriod !== undefined ? prefs.unavailablePeriod : readUnavailablePeriod(blocks)
 
   if (info) {
-    const local = readStorage('demo-profile', null) ?? {}
     localStorage.setItem('demo-profile', JSON.stringify({
-      name: local.name ?? me.name,
-      goal: local.goal ?? 'general',
-      environment: local.environment ?? 'gym',
-      unavailablePeriod: local.unavailablePeriod ?? null,
+      name: prefs.name ?? me.name,
+      goal: prefs.goal ?? 'general',
+      environment: prefs.environment ?? 'gym',
+      unavailablePeriod,
       age: info.age,
       height: info.height,
       weight: info.weight,
@@ -64,7 +65,8 @@ export async function hydrateFromServer() {
     }
   }
 
-  await refreshTimetable()
+  savePrefs({ unavailablePeriod }, me.name)
+  await refreshTimetable(blocks)
   return me
 }
 

@@ -1,11 +1,13 @@
 import { api, clearToken, setToken } from './client.js'
 import { clearLocalData } from './profile.js'
+import { clearCurrentUser, setCurrentUser } from '../userPrefs.js'
 
 export const loginIdPattern = /^[a-z][a-z0-9]{3,19}$/
 
 export async function login(name, password) {
   const { access_token: token } = await api('/login', { method: 'POST', body: { name, password }, auth: false })
   setToken(token)
+  setCurrentUser(name)
 }
 
 // 가입하고 바로 로그인해요.
@@ -20,5 +22,6 @@ export function getMe() {
 
 export function logout() {
   clearToken()
+  clearCurrentUser()
   clearLocalData()
 }

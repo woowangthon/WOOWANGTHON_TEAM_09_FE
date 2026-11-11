@@ -1,12 +1,11 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
-import { dayLabel, loadWeek } from '../api/plan.js'
-import { conflictMessage, replaceSchedule, setExerciseCompleted } from '../api/schedule.js'
-import ExerciseIcon from '../components/ExerciseIcon.jsx'
+import { dayLabel, loadWeek, withExerciseChecked } from '../api/plan.js'
+import { conflictMessage, replaceSchedule } from '../api/schedule.js'
 import FitNavigation from '../components/FitNavigation.jsx'
 import MissedWorkoutCard from '../components/MissedWorkoutCard.jsx'
+import WorkoutChecklist from '../components/WorkoutChecklist.jsx'
 import WorkoutWeek from '../components/WorkoutWeek.jsx'
-import { feedbackReasons, loadFeedback, saveFeedback } from '../feedback.js'
 import { getBusyPeriods, getFreeSlots, toTime } from '../freeTime.js'
 import { useAsync } from '../hooks/useAsync.js'
 import { addDays, dateKey, formatKoreanTime, readStorage } from '../workoutPlan.js'
@@ -20,12 +19,6 @@ function greeting(hour) {
   return '좋은 저녁이에요'
 }
 
-function sessionStatus(exercises) {
-  const completedCount = exercises.filter((exercise) => exercise.completed).length
-  if (exercises.length > 0 && completedCount === exercises.length) return { completedCount, status: '완료' }
-  return { completedCount, status: completedCount > 0 ? '부분 완료' : '기록 없음' }
-}
-
 function RoutineSummary({ exercises }) {
   return (
     <p className="fit-home__summary">
@@ -36,25 +29,6 @@ function RoutineSummary({ exercises }) {
 }
 
 function TodayCard({ session, label, isToday, onExerciseChange }) {
-  const [isOpen, setIsOpen] = useState(false)
-  const [savingId, setSavingId] = useState(null)
-  const [message, setMessage] = useState('')
-  const total = session.exercises.length
-
-  async function toggle(exercise) {
-    setSavingId(exercise.id)
-    try {
-      await setExerciseCompleted(exercise.id, !exercise.completed)
-      const done = session.completedCount + (exercise.completed ? -1 : 1)
-      onExerciseChange(session.id, exercise.id, !exercise.completed)
-      setMessage(done === total ? '오늘 운동을 모두 완료했어요!' : `${done}/${total} 종목 완료`)
-    } catch (error) {
-      setMessage(error.message)
-    } finally {
-      setSavingId(null)
-    }
-  }
-
   return (
     <div className="fit-home__card">
       <h3>{label} - {session.title}</h3>
@@ -64,76 +38,17 @@ function TodayCard({ session, label, isToday, onExerciseChange }) {
       <RoutineSummary exercises={session.exercises} />
 
       {isToday ? (
-        <button
-          className={`fit-home__button${isOpen ? ' fit-home__button--outline' : ''}`}
-          type="button"
-          aria-expanded={isOpen}
-          onClick={() => setIsOpen((open) => !open)}
-        >
-          {isOpen ? '접기' : '운동 완료 기록'}
-        </button>
+        <WorkoutChecklist session={session} onExerciseChange={onExerciseChange} />
       ) : (
         <Link className="fit-home__button" to={`/plan/${session.id}`}>운동 상세 보기</Link>
       )}
-
-      {isOpen && (
-        <ul className="fit-home__exercises" aria-label="운동 종목 체크">
-          {session.exercises.map((exercise) => (
-            <li key={exercise.id}>
-              <button
-                type="button"
-                className="fit-home__exercise"
-                aria-pressed={exercise.completed}
-                disabled={savingId === exercise.id}
-                onClick={() => toggle(exercise)}
-              >
-                <ExerciseIcon name={exercise.name} />
-                <span>
-                  <strong>{exercise.name}</strong>
-                  <small>{exercise.detail}</small>
-                </span>
-                <span className="fit-home__check" aria-hidden="true" />
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      <p className="fit-home__status" role="status">{message}</p>
     </div>
-  )
-}
-
-function FeedbackCard({ onSubmit }) {
-  const [reason, setReason] = useState('')
-
-  return (
-    <form
-      className="fit-home__card fit-home__feedback"
-      onSubmit={(event) => {
-        event.preventDefault()
-        if (reason) onSubmit(reason)
-      }}
-    >
-      <fieldset>
-        <legend>계획한 운동을 모두 완료하지 못한<br />이유가 있나요?</legend>
-        {feedbackReasons.map((item) => (
-          <label key={item.value}>
-            <input type="radio" name="feedback" value={item.value} checked={reason === item.value} onChange={() => setReason(item.value)} />
-            <span>{item.label}</span>
-          </label>
-        ))}
-      </fieldset>
-      <button className="fit-home__mint" type="submit" disabled={!reason}>피드백 완료</button>
-    </form>
   )
 }
 
 export default function HomePage() {
   const [today] = useState(() => new Date())
   const { data, error, loading, reload, setData } = useAsync(() => loadWeek(today), [today])
-  const [feedback, setFeedback] = useState(loadFeedback)
-  const [submittedId, setSubmittedId] = useState(null)
   const [name] = useState(() => readStorage('demo-profile', null)?.name?.trim() ?? '')
   const [message, setMessage] = useState('')
 
@@ -148,9 +63,6 @@ export default function HomePage() {
   const missed = !todaySession
     ? sessions.find((session) => session.date === yesterdayKey && session.status === '미수행')
     : null
-  const feedbackTarget = [...sessions]
-    .reverse()
-    .find((session) => session.date < todayKey && session.status !== '완료' && !feedback[session.id])
 
   // 오늘 빈 시간: 어려운 시간 · 수업 · 오늘 일정을 피해요.
   const todayPeriods = [
@@ -164,14 +76,7 @@ export default function HomePage() {
     : []
 
   function updateExercise(sessionId, exerciseId, completed) {
-    setData((previous) => ({
-      ...previous,
-      sessions: previous.sessions.map((session) => {
-        if (session.id !== sessionId) return session
-        const exercises = session.exercises.map((exercise) => (exercise.id === exerciseId ? { ...exercise, completed } : exercise))
-        return { ...session, exercises, ...sessionStatus(exercises) }
-      }),
-    }))
+    setData((previous) => ({ ...previous, sessions: withExerciseChecked(previous.sessions, sessionId, exerciseId, completed) }))
   }
 
   async function moveToToday(minutes) {
@@ -184,15 +89,6 @@ export default function HomePage() {
       reload()
     } catch (caught) {
       setMessage(caught.status === 409 ? conflictMessage(caught) : caught.message)
-    }
-  }
-
-  function submitFeedback(reason) {
-    try {
-      setFeedback(saveFeedback(feedbackTarget.id, reason))
-      setSubmittedId(feedbackTarget.id)
-    } catch {
-      setMessage('피드백을 저장하지 못했어요. 다시 시도해 주세요.')
     }
   }
 
@@ -257,17 +153,8 @@ export default function HomePage() {
       </section>
 
       {sessions.length > 0 && (
-        <Link className="fit-home__week" to="/report" aria-label="주간 운동 리포트 보기">
+        <div className="fit-home__week">
           <WorkoutWeek sessions={sessions} today={today} />
-        </Link>
-      )}
-
-      {feedbackTarget && !submittedId && <FeedbackCard key={feedbackTarget.id} onSubmit={submitFeedback} />}
-
-      {submittedId && (
-        <div className="fit-home__card fit-home__feedback">
-          <p className="fit-home__feedback-title">계획한 운동을 모두 완료하지 못한<br />이유가 있나요?</p>
-          <p className="fit-home__done" role="status">피드백 완료</p>
         </div>
       )}
 

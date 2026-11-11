@@ -109,3 +109,15 @@ export async function clearUpcomingWorkouts(sessions, todayKey = dateKey(new Dat
       .map((session) => deleteSchedule(session.id))
   )
 }
+
+// 종목 하나를 체크하거나 해제한 뒤 세션 상태를 다시 계산해요.
+export function withExerciseChecked(sessions, sessionId, exerciseId, completed) {
+  return sessions.map((session) => {
+    if (session.id !== sessionId) return session
+    const exercises = session.exercises.map((exercise) => (exercise.id === exerciseId ? { ...exercise, completed } : exercise))
+    const completedCount = exercises.filter((exercise) => exercise.completed).length
+    let status = session.status === '미수행' ? '미수행' : '기록 없음'
+    if (completedCount > 0) status = completedCount === exercises.length ? '완료' : '부분 완료'
+    return { ...session, exercises, completedCount, status }
+  })
+}

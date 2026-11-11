@@ -16,14 +16,14 @@
   padding: clamp(68px, 18vh, 140px) 20px calc(40px + env(safe-area-inset-bottom));
   color: #fafafa;
   color-scheme: dark;
-  font: 14px/1.45 system-ui, 'Malgun Gothic', sans-serif;
+  font: 14px/1.45 var(--sans);
   text-align: center;
 }
 
 .fit-generate h1 {
   margin: 0 0 10px;
   color: inherit;
-  font: 700 clamp(23px, 6.8vw, 28px)/1.28 system-ui, 'Malgun Gothic', sans-serif;
+  font: 700 clamp(23px, 6.8vw, 28px)/1.28 var(--sans);
   letter-spacing: -0.045em;
   word-break: keep-all;
 }

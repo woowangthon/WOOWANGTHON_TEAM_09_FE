@@ -19,7 +19,7 @@
   padding: max(56px, env(safe-area-inset-top)) 20px calc(120px + env(safe-area-inset-bottom));
   color: #fafafa;
   color-scheme: dark;
-  font: 14px/1.45 system-ui, 'Malgun Gothic', sans-serif;
+  font: 14px/1.45 var(--sans);
   text-align: left;
 }
 
@@ -49,6 +49,15 @@
 
 .fit-calendar__card + .fit-calendar__card {
   margin-top: 14px;
+}
+
+/* 오늘 운동 펼쳤을 때 종목 요약 */
+.fit-calendar__summary {
+  display: grid;
+  margin: 4px 0 0;
+  color: #e4e4e1;
+  font-size: 12px;
+  line-height: 1.4;
 }
 
 /* 달력 */

@@ -1,0 +1,106 @@
+.fit-check__toggle {
+  display: grid;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 42px;
+  margin-top: 14px;
+  padding: 4px 12px;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: #fff0f5;
+  color: #7a1a3c;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.fit-check__toggle--open {
+  border-color: #fafafa;
+  background: transparent;
+  color: #fafafa;
+}
+
+.fit-check__list {
+  display: grid;
+  gap: 10px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fit-check__item {
+  display: flex;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 100px;
+  align-items: center;
+  gap: 24px;
+  padding: 16px 20px 16px 24px;
+  border: 1px solid #5a5a58;
+  border-radius: 12px;
+  background: #4a4a48;
+  color: #fafafa;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.fit-check__item > span:nth-child(2) {
+  display: grid;
+  flex: 1;
+  gap: 2px;
+}
+
+.fit-check__item strong {
+  font-size: 15px;
+}
+
+.fit-check__item small {
+  color: #d6d6d3;
+  font-size: 13px;
+}
+
+.fit-check__item .fit-exercise-icon {
+  width: 64px;
+  height: 64px;
+}
+
+.fit-check__item .fit-exercise-icon svg {
+  width: 40px;
+  height: 40px;
+}
+
+.fit-check__mark {
+  box-sizing: border-box;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  border: 1.5px solid #6bd2b6;
+  border-radius: 50%;
+}
+
+.fit-check__item[aria-pressed='true'] {
+  border-color: #6bd2b6;
+  background: #1a1a1a;
+  color: #6f6f6c;
+}
+
+.fit-check__item[aria-pressed='true'] small {
+  color: #5a5a58;
+}
+
+.fit-check__item[aria-pressed='true'] .fit-exercise-icon {
+  opacity: 0.4;
+}
+
+.fit-check__item[aria-pressed='true'] .fit-check__mark {
+  background: #6bd2b6;
+}
+
+.fit-check__status {
+  margin: 8px 0 0;
+  color: #6bd2b6;
+  font-size: 12px;
+}

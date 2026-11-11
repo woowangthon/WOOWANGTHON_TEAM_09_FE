@@ -2,8 +2,10 @@ import { api } from './client.js'
 import { loadTimetable, saveTimetable } from '../timetable.js'
 import { getUnavailableSegments, loadUnavailablePeriod } from '../workoutAvailability.js'
 
-// 서버 반복 일정 중 '운동하기 어려운 시간'은 이 이름으로 구분해요.
+// 서버 반복 일정 중 '운동하기 어려운 시간'은 이 이름으로 시작해요.
+// 이름 뒤에 원래 시간대를 적어 두어 다른 기기에서도 복원할 수 있게 해요. 예: 운동하기 어려운 시간 (매일 22:00~07:00)
 export const UNAVAILABLE_NAME = '운동하기 어려운 시간'
+const periodInName = /\(매일 (\d{2}:\d{2})~(\d{2}:\d{2})\)/
 
 // 앱 요일(0=일 ~ 6=토) ↔ 서버 요일(1=월 ~ 7=일)
 export const toServerWeekday = (weekday) => (Number(weekday) === 0 ? 7 : Number(weekday))
@@ -19,7 +21,16 @@ const toTime = (minutes) => {
 }
 
 function isUnavailable(block) {
-  return block.name === UNAVAILABLE_NAME
+  return block.name?.startsWith(UNAVAILABLE_NAME) ?? false
+}
+
+// 반복 일정 이름에서 어려운 시간대를 읽어요. 없으면 null
+export function readUnavailablePeriod(blocks) {
+  for (const block of blocks.filter(isUnavailable)) {
+    const match = block.name.match(periodInName)
+    if (match) return { startTime: match[1], endTime: match[2] }
+  }
+  return null
 }
 
 function toClass(block) {
@@ -37,8 +48,8 @@ export function listBlocks() {
 }
 
 // 서버의 수업 목록을 받아 이 기기 캐시에 저장하고 돌려줘요.
-export async function refreshTimetable() {
-  const blocks = await listBlocks()
+export async function refreshTimetable(knownBlocks) {
+  const blocks = knownBlocks ?? (await listBlocks())
   const classes = blocks.filter((block) => !isUnavailable(block)).map(toClass)
   saveTimetable(classes)
   return loadTimetable()
@@ -48,6 +59,7 @@ export async function refreshTimetable() {
 export function unavailablePieces(period, classes) {
   const segments = getUnavailableSegments(period).map((segment) => [toMinutes(segment.startTime), toMinutes(segment.endTime)])
   const pieces = []
+  const name = period ? `${UNAVAILABLE_NAME} (매일 ${period.startTime}~${period.endTime})` : UNAVAILABLE_NAME
 
   for (let weekday = 0; weekday < 7; weekday += 1) {
     const busy = classes
@@ -65,7 +77,7 @@ export function unavailablePieces(period, classes) {
       }
       parts
         .filter(([a, b]) => toTime(b) > toTime(a))
-        .forEach(([a, b]) => pieces.push({ weekday: toServerWeekday(weekday), start_time: toTime(a), end_time: toTime(b), name: UNAVAILABLE_NAME }))
+        .forEach(([a, b]) => pieces.push({ weekday: toServerWeekday(weekday), start_time: toTime(a), end_time: toTime(b), name }))
     }
   }
 

@@ -21,7 +21,7 @@
   padding: max(24px, env(safe-area-inset-top)) 20px calc(32px + env(safe-area-inset-bottom));
   color: #fafafa;
   color-scheme: dark;
-  font: 14px/1.45 system-ui, 'Malgun Gothic', sans-serif;
+  font: 14px/1.45 var(--sans);
   text-align: center;
 }
 
@@ -61,7 +61,7 @@
 .fit-setup h1 {
   margin: 0;
   color: inherit;
-  font: 800 clamp(26px, 7.6vw, 30px)/1.3 system-ui, 'Malgun Gothic', sans-serif;
+  font: 800 clamp(26px, 7.6vw, 30px)/1.3 var(--sans);
   letter-spacing: -0.04em;
   word-break: keep-all;
 }

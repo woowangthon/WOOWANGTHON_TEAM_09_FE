@@ -4,13 +4,11 @@ import { api } from '../api/client.js'
 import { loadWeek } from '../api/plan.js'
 import FitNavigation from '../components/FitNavigation.jsx'
 import WorkoutWeek from '../components/WorkoutWeek.jsx'
-import { feedbackReasons, loadFeedback } from '../feedback.js'
 import { useAsync } from '../hooks/useAsync.js'
 import { addDays, dateKey, formatKoreanTime, weekRange } from '../workoutPlan.js'
 import './ReportPage.css'
 
 const dateFormat = new Intl.DateTimeFormat('ko-KR', { month: 'long', day: 'numeric', weekday: 'long' })
-const reasonLabels = Object.fromEntries(feedbackReasons.map((item) => [item.value, item.label]))
 
 function sessionStatus(planned, completed, date, todayKey) {
   if (planned > 0 && completed === planned) return '완료'
@@ -27,7 +25,6 @@ async function loadReport(today) {
 
 export default function ReportPage() {
   const [today] = useState(() => new Date())
-  const [feedback] = useState(loadFeedback)
   const { data, error, loading, reload } = useAsync(() => loadReport(today), [today])
   const todayKey = dateKey(today)
 
@@ -46,7 +43,6 @@ export default function ReportPage() {
       const status = sessionStatus(day.planned, day.completed, day.date, todayKey)
       return `${day.weekday}요일 ${status === '기록 없음' ? '예정' : status}`
     })
-  const feedbackItems = sessions.filter((session) => reasonLabels[feedback[session.id]?.reason])
   const rate = report?.so_far.rate ?? 0
 
   return (
@@ -93,20 +89,6 @@ export default function ReportPage() {
             </div>
             <p className="fit-report__sessions">{dayStates.join(' · ')}</p>
             <p className="fit-report__empty">수행률은 오늘까지 계획한 종목 중 완료한 비율이에요.</p>
-
-            <h2 className="fit-report__feedback-title">이번 주 피드백</h2>
-            {feedbackItems.length ? (
-              <ul className="fit-report__feedback">
-                {feedbackItems.map((session) => (
-                  <li key={session.id}>
-                    <span>{session.weekday}요일 운동 {session.status === '부분 완료' ? '부분 완료' : '미수행'} 사유</span>
-                    <small>{reasonLabels[feedback[session.id].reason]}</small>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="fit-report__empty">아직 남긴 피드백이 없어요.</p>
-            )}
           </section>
 
           <section className="fit-report__card fit-report__week" aria-label="요일별 진행">

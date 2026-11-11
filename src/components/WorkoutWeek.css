@@ -23,17 +23,12 @@
   background: #707070;
 }
 
-.fit-week__dot[data-status='기록 없음'] {
+.fit-week__dot[data-status='운동 안 함'] {
   border-color: var(--week-mint);
   background: transparent;
 }
 
-.fit-week__dot[data-status='부분 완료'] {
-  border-color: var(--week-mint);
-  background: linear-gradient(90deg, var(--week-mint) 50%, transparent 50%);
-}
-
-.fit-week__dot[data-status='완료'] {
+.fit-week__dot[data-status='운동함'] {
   background: var(--week-mint);
 }
 
