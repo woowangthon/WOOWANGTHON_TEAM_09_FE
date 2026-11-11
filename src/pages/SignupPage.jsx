@@ -229,9 +229,7 @@ export default function SignupPage() {
   function heading(lines) {
     return (
       <h1 ref={headingRef} tabIndex={-1}>
-        {lines.map((line, index) => (
-          <span key={line}>{index > 0 && <br />}{line}</span>
-        ))}
+        {lines.map((line) => <span key={line}>{line}</span>)}
       </h1>
     )
   }

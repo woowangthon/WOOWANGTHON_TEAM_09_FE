@@ -257,7 +257,7 @@ export default function SchedulePage() {
           {selectedDate.getMonth() + 1}월 {selectedDate.getDate()}일 {isToday ? '오늘' : `${weekdays[selectedDate.getDay()]}요일`}
         </p>
 
-        {loading && !data && <p className="fit-calendar__meta" role="status">일정을 불러오는 중이에요...</p>}
+        {loading && !data && <div className="fit-skeleton" role="status" aria-label="일정을 불러오는 중이에요"><span /><span /><span /></div>}
         {error && (
           <>
             <p className="fit-calendar__meta" role="alert">{error.message}</p>

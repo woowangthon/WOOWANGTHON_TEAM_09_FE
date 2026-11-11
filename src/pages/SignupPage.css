@@ -66,6 +66,11 @@
   word-break: keep-all;
 }
 
+/* 질문 한 줄 = 한 블록 (한 줄씩 나타나는 움직임용) */
+.fit-setup h1 > span {
+  display: block;
+}
+
 .fit-setup h1:focus {
   outline: none;
 }

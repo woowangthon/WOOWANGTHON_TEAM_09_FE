@@ -94,7 +94,7 @@ export default function HomePage() {
 
   let todayCard
   if (loading && !data) {
-    todayCard = <div className="fit-home__card"><p className="fit-home__desc" role="status">운동 계획을 불러오는 중이에요...</p></div>
+    todayCard = <div className="fit-home__card fit-skeleton" role="status" aria-label="운동 계획을 불러오는 중이에요"><span /><span /><span /></div>
   } else if (error) {
     todayCard = (
       <div className="fit-home__card">

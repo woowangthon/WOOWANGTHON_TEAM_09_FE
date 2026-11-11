@@ -85,7 +85,7 @@ export default function PlanGeneratePage() {
 
       <div className="fit-generate__spinner" aria-hidden="true" />
 
-      <div className="fit-generate__status" role="status">
+      <div className="fit-generate__status" role="status" key={stepIndex}>
         <p>{steps[stepIndex].title}</p>
         <p className="fit-generate__note">{steps[stepIndex].detail}</p>
       </div>

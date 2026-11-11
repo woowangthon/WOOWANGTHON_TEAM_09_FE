@@ -5,6 +5,7 @@ import { loadWeek } from '../api/plan.js'
 import FitNavigation from '../components/FitNavigation.jsx'
 import WorkoutWeek from '../components/WorkoutWeek.jsx'
 import { useAsync } from '../hooks/useAsync.js'
+import { useCountUp } from '../hooks/useCountUp.js'
 import { addDays, dateKey, formatKoreanTime, weekRange } from '../workoutPlan.js'
 import './ReportPage.css'
 
@@ -44,6 +45,7 @@ export default function ReportPage() {
       return `${day.weekday}요일 ${status === '기록 없음' ? '예정' : status}`
     })
   const rate = report?.so_far.rate ?? 0
+  const shownRate = useCountUp(rate)
 
   return (
     <div className="fit-report">
@@ -52,7 +54,7 @@ export default function ReportPage() {
         <h1>이번 주도 수고했어요</h1>
       </header>
 
-      {loading && !data && <p className="fit-report__empty" role="status">리포트를 불러오는 중이에요...</p>}
+      {loading && !data && <div className="fit-report__card fit-skeleton" role="status" aria-label="리포트를 불러오는 중이에요"><span /><span /><span /></div>}
 
       {error && (
         <section className="fit-report__card">
@@ -74,7 +76,7 @@ export default function ReportPage() {
           <section className="fit-report__card" aria-labelledby="report-rate">
             <h2 id="report-rate">이번 주 운동 수행률</h2>
             <p className="fit-report__rate">
-              <strong>{rate}%</strong>
+              <strong>{shownRate}%</strong>
               <span>{report.workout_days}회 중 {report.completed_days}회 완료</span>
             </p>
             <div

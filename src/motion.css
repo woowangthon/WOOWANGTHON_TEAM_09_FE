@@ -1,0 +1,243 @@
+/*
+ * 화면 움직임 (토스처럼 은은하게)
+ * - 화면이 열리면 내용이 위에서부터 차례로 살짝 떠오르며 나타나요.
+ * - 온보딩 질문은 한 줄씩, 선택지는 그 뒤에 차례로 나타나요.
+ * - 버튼은 누르면 살짝 눌려요.
+ * '동작 줄이기' 설정을 켠 사용자에게는 움직임을 끄고 바로 보여줘요.
+ */
+
+:root {
+  --motion-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes fit-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes fit-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* 왼쪽에서 오른쪽으로 스르륵: 부드러운 경계의 마스크가 밀려가며 글자를 드러내요. */
+@keyframes fit-wipe {
+  from {
+    opacity: 0.3;
+    -webkit-mask-position: 100% 0;
+    mask-position: 100% 0;
+  }
+  to {
+    opacity: 1;
+    -webkit-mask-position: 0 0;
+    mask-position: 0 0;
+  }
+}
+
+@keyframes fit-shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+
+@keyframes fit-page-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes fit-page-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@keyframes fit-grow {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes fit-pop {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* 화면 진입: 직속 내용이 차례로 떠올라요. 하단 메뉴는 위치에 transform을 쓰므로 제외해요. */
+  :is(.fit-home, .fit-report, .fit-calendar, .fit-plan, .fit-generate) > :not(.fit-nav) {
+    animation: fit-rise 0.8s var(--motion-ease) both;
+  }
+
+  :is(.fit-home, .fit-report, .fit-calendar, .fit-plan, .fit-generate) > :not(.fit-nav):nth-child(2) { animation-delay: 0.1s; }
+  :is(.fit-home, .fit-report, .fit-calendar, .fit-plan, .fit-generate) > :not(.fit-nav):nth-child(3) { animation-delay: 0.2s; }
+  :is(.fit-home, .fit-report, .fit-calendar, .fit-plan, .fit-generate) > :not(.fit-nav):nth-child(4) { animation-delay: 0.3s; }
+  :is(.fit-home, .fit-report, .fit-calendar, .fit-plan, .fit-generate) > :not(.fit-nav):nth-child(5) { animation-delay: 0.4s; }
+  :is(.fit-home, .fit-report, .fit-calendar, .fit-plan, .fit-generate) > :not(.fit-nav):nth-child(n + 6) { animation-delay: 0.5s; }
+
+  /* 불러오는 중 카드가 실제 카드로 바뀔 때 부드럽게 나타나요. */
+  :is(.fit-home__card, .fit-calendar__workout, .fit-report__next li) {
+    animation: fit-fade 0.6s ease both;
+  }
+
+  /* 운동 일정 목록은 한 줄씩 */
+  :is(.fit-plan__sessions, .fit-report__next ul, .fit-check__list) > li {
+    animation: fit-rise 0.65s var(--motion-ease) both;
+  }
+
+  :is(.fit-plan__sessions, .fit-report__next ul, .fit-check__list) > li:nth-child(2) { animation-delay: 0.08s; }
+  :is(.fit-plan__sessions, .fit-report__next ul, .fit-check__list) > li:nth-child(3) { animation-delay: 0.16s; }
+  :is(.fit-plan__sessions, .fit-report__next ul, .fit-check__list) > li:nth-child(4) { animation-delay: 0.24s; }
+  :is(.fit-plan__sessions, .fit-report__next ul, .fit-check__list) > li:nth-child(n + 5) { animation-delay: 0.32s; }
+
+  /* 온보딩: 질문 한 줄씩 → 설명 → 선택지 차례로 */
+  .fit-setup > :not(.fit-setup__progress, .fit-setup__message) {
+    animation: fit-fade 0.6s ease both;
+  }
+
+  /* 큰 제목: 왼쪽에서 오른쪽으로 스르륵, 여러 줄이면 한 줄씩 */
+  :is(.fit-home, .fit-report, .fit-plan, .fit-generate) h1,
+  .fit-setup h1 > span,
+  .fit-setup h1:not(:has(> span)) {
+    -webkit-mask-image: linear-gradient(90deg, #000 45%, transparent 55%);
+    mask-image: linear-gradient(90deg, #000 45%, transparent 55%);
+    -webkit-mask-size: 250% 100%;
+    mask-size: 250% 100%;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    animation: fit-wipe 1.4s cubic-bezier(0.4, 0, 0.2, 1) 0.15s both;
+  }
+
+  .fit-setup h1 > span:nth-child(2) { animation-delay: 0.6s; }
+  .fit-setup h1 > span:nth-child(3) { animation-delay: 1.05s; }
+
+  .fit-setup :is(.fit-setup__hint, .fit-setup__range-summary, .fit-setup__body-card, .fit-setup__scrubbers) {
+    animation: fit-fade 0.7s ease 0.7s both;
+  }
+
+  .fit-setup__options > * {
+    animation: fit-rise 0.7s var(--motion-ease) both;
+    animation-delay: 0.8s;
+  }
+
+  .fit-setup__options > :nth-child(2) { animation-delay: 0.9s; }
+  .fit-setup__options > :nth-child(3) { animation-delay: 1s; }
+  .fit-setup__options > :nth-child(4) { animation-delay: 1.1s; }
+  .fit-setup__options > :nth-child(n + 5) { animation-delay: 1.2s; }
+
+  /* AI 계획 생성 중: 단계 문구가 바뀔 때마다 새로 떠올라요. */
+  .fit-generate__status {
+    animation: fit-rise 0.7s var(--motion-ease) both;
+  }
+
+  /* 수행률 막대는 왼쪽부터 차오르고, 요일 원은 톡 나타나요. */
+  .fit-report__bar span {
+    transform-origin: left center;
+    animation: fit-grow 1.3s var(--motion-ease) 0.5s both;
+  }
+
+  .fit-week__dot {
+    animation: fit-pop 0.6s var(--motion-ease) both;
+  }
+
+  .fit-week li:nth-child(2) .fit-week__dot { animation-delay: 0.06s; }
+  .fit-week li:nth-child(3) .fit-week__dot { animation-delay: 0.12s; }
+  .fit-week li:nth-child(4) .fit-week__dot { animation-delay: 0.18s; }
+  .fit-week li:nth-child(5) .fit-week__dot { animation-delay: 0.24s; }
+  .fit-week li:nth-child(6) .fit-week__dot { animation-delay: 0.3s; }
+  .fit-week li:nth-child(7) .fit-week__dot { animation-delay: 0.36s; }
+
+  /* 버튼을 누르면 살짝 눌려요. */
+  :is(button, .fit-setup__choice, [class*='__button'], [class*='__action'], .fit-plan__session, .fit-profile__row) {
+    transition: transform 0.15s ease, background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease;
+  }
+
+  :is(button, .fit-setup__choice, [class*='__button'], [class*='__action'], .fit-plan__session, .fit-profile__row):active:not(:disabled) {
+    transform: scale(0.97);
+  }
+
+  /* 하단 메뉴로 화면을 바꿀 때 이전 화면은 사라지고 새 화면이 살짝 올라와요. 메뉴는 그대로 있어요. */
+  ::view-transition-old(root) {
+    animation: fit-page-out 0.2s ease both;
+  }
+
+  ::view-transition-new(root) {
+    animation: fit-page-in 0.45s var(--motion-ease) both;
+  }
+
+  .fit-skeleton > span {
+    background-image: linear-gradient(90deg, #3d3d3c 30%, #4d4d4b 50%, #3d3d3c 70%);
+    background-size: 200% 100%;
+    animation: fit-shimmer 1.3s ease-in-out infinite;
+  }
+
+  /* 운동 종목을 체크하면 체크 원이 톡 채워져요. */
+  .fit-check__item[aria-pressed='true'] .fit-check__mark {
+    animation: fit-pop 0.35s var(--motion-ease) both;
+  }
+}
+
+.fit-nav {
+  view-transition-name: fit-nav;
+}
+
+/* 불러오는 중에는 글자 대신 내용 자리를 회색 막대로 보여줘요. */
+.fit-skeleton {
+  display: grid;
+  gap: 10px;
+}
+
+.fit-skeleton > span {
+  display: block;
+  height: 14px;
+  border-radius: 7px;
+  background-color: #3d3d3c;
+}
+
+.fit-skeleton > span:first-child {
+  width: 55%;
+  height: 18px;
+}
+
+.fit-skeleton > span:nth-child(2) {
+  width: 80%;
+}
+
+.fit-skeleton > span:nth-child(3) {
+  width: 40%;
+}
+
+/* 동작 줄이기: 화면 전환도 바로 바뀌게 */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
