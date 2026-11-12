@@ -45,8 +45,10 @@ export async function api(path, { method = 'GET', body, auth = true, query } = {
     if (value !== undefined && value !== null) url.searchParams.set(key, value)
   })
 
+  // 사진 같은 파일은 FormData로 보내요. 이때 Content-Type은 브라우저가 정해요.
+  const isForm = body instanceof FormData
   const headers = {}
-  if (body !== undefined) headers['Content-Type'] = 'application/json'
+  if (body !== undefined && !isForm) headers['Content-Type'] = 'application/json'
   if (auth) {
     const token = getToken()
     if (token) headers.Authorization = `Bearer ${token}`
@@ -54,7 +56,7 @@ export async function api(path, { method = 'GET', body, auth = true, query } = {
 
   let response
   try {
-    response = await fetch(url, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) })
+    response = await fetch(url, { method, headers, body: body === undefined || isForm ? body : JSON.stringify(body) })
   } catch {
     throw new ApiError(0, '서버에 연결하지 못했어요. 인터넷 연결을 확인해 주세요.')
   }

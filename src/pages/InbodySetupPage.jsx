@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router'
-import { inbodyInfo, saveInfo } from '../api/profile.js'
+import { inbodyInfo, readInbodyImage, saveInfo } from '../api/profile.js'
 import SetupProgress from '../components/SetupProgress.jsx'
 import UploadPanel from '../components/UploadPanel.jsx'
 import { useImageFile } from '../hooks/useImageFile.js'
 import { loadInbody, saveInbody, todayText } from '../inbody.js'
 import './SignupPage.css'
 import './UploadSetup.css'
+
+const missingLabels = { body_fat_percent: '체지방률', skeletal_muscle_kg: '골격근량', inbody_measured_at: '측정일' }
 
 export default function InbodySetupPage() {
   const navigate = useNavigate()
@@ -17,6 +19,8 @@ export default function InbodySetupPage() {
   const [isFormOpen, setIsFormOpen] = useState(() => fromProfile && Boolean(form.measuredAt))
   const [message, setMessage] = useState('')
   const [isSaving, setIsSaving] = useState(false)
+  const [reading, setReading] = useState(null)
+  const readId = useRef(0)
   const firstFieldRef = useRef(null)
   const { image, inputRef, selectFile, clear } = useImageFile(setMessage)
 
@@ -24,11 +28,46 @@ export default function InbodySetupPage() {
     if (isFormOpen) firstFieldRef.current?.focus()
   }, [isFormOpen])
 
-  function handleFileChange(event) {
-    if (selectFile(event)) {
-      setIsFormOpen(true)
-      setMessage('')
+  // 사진을 고르면 서버가 결과지를 읽어 칸을 채워요. 틀릴 수 있어서 저장 전에 확인받아요.
+  async function handleFileChange(event) {
+    const file = event.target.files?.[0]
+    if (!selectFile(event)) return
+
+    setIsFormOpen(true)
+    setMessage('')
+    setReading({ status: 'reading' })
+    const id = ++readId.current
+
+    try {
+      const result = await readInbodyImage(file)
+      if (id !== readId.current) return
+
+      setForm((previous) => ({
+        bodyFat: result.body_fat_percent ?? previous.bodyFat,
+        muscleMass: result.skeletal_muscle_kg ?? previous.muscleMass,
+        measuredAt: result.inbody_measured_at ?? previous.measuredAt,
+      }))
+      setReading({ status: 'done', missing: result.missing ?? [], warnings: result.warnings ?? [] })
+    } catch (error) {
+      if (id !== readId.current) return
+      setReading({ status: 'failed', message: error.message })
     }
+  }
+
+  function clearImage() {
+    readId.current += 1
+    clear()
+    setReading(null)
+    setMessage('')
+  }
+
+  let readingNote
+  if (reading?.status === 'reading') readingNote = '사진을 읽는 중이에요... 10초 정도 걸릴 수 있어요.'
+  else if (reading?.status === 'failed') readingNote = `사진을 읽지 못했어요. 직접 입력해 주세요. (${reading.message})`
+  else if (reading?.status === 'done') {
+    readingNote = reading.missing.length
+      ? `${reading.missing.map((key) => missingLabels[key] ?? key).join(', ')}은(는) 찾지 못했어요. 직접 입력해 주세요.`
+      : '사진에서 읽은 값이에요. 맞는지 확인하고 저장해 주세요.'
   }
 
   function handleChange(event) {
@@ -72,10 +111,17 @@ export default function InbodySetupPage() {
           image={image}
           inputRef={inputRef}
           onFileChange={handleFileChange}
-          onClearImage={() => { clear(); setMessage('') }}
+          onClearImage={clearImage}
           isFormOpen={isFormOpen}
           onToggleForm={() => setIsFormOpen((open) => !open)}
+          note={readingNote}
         />
+
+        {reading?.warnings?.length > 0 && (
+          <ul className="fit-setup__warnings">
+            {reading.warnings.map((warning) => <li key={warning}>{warning}</li>)}
+          </ul>
+        )}
 
         {!fromProfile && (
           <button className="fit-setup__skip" type="button" onClick={() => navigate(nextPath)}>다음에 할게요</button>
@@ -95,7 +141,7 @@ export default function InbodySetupPage() {
               측정일
               <input type="date" name="measuredAt" value={form.measuredAt} onChange={handleChange} max={todayText()} required />
             </label>
-            <button className="fit-setup__add" type="submit" disabled={isSaving}>
+            <button className="fit-setup__add" type="submit" disabled={isSaving || reading?.status === 'reading'}>
               {isSaving ? '저장하는 중...' : fromProfile ? '저장' : '저장하고 다음'}
             </button>
           </form>

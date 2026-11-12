@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
-import { dayLabel, loadPeriod, withExerciseChecked } from '../api/plan.js'
+import { loadPeriod, withExerciseChecked } from '../api/plan.js'
 import { conflictMessage, createSchedule, deleteSchedule, replaceSchedule } from '../api/schedule.js'
 import FitNavigation from '../components/FitNavigation.jsx'
 import MissedWorkoutCard from '../components/MissedWorkoutCard.jsx'
@@ -8,6 +8,8 @@ import TimeSelect from '../components/TimeSelect.jsx'
 import WorkoutChecklist from '../components/WorkoutChecklist.jsx'
 import { getBusyPeriods, getFreeSlots, toTime } from '../freeTime.js'
 import { useAsync } from '../hooks/useAsync.js'
+import { loadTimetable } from '../timetable.js'
+import { crossesMidnight, loadUnavailablePeriods } from '../workoutAvailability.js'
 import { addDays, dateKey, formatKoreanTime, weekdays, weekRange } from '../workoutPlan.js'
 import './SchedulePage.css'
 
@@ -17,6 +19,22 @@ const stateLabels = { done: '운동 완료', partial: '운동 부분 완료', mi
 const stateByStatus = { 완료: 'done', '부분 완료': 'partial', 미수행: 'missed', '기록 없음': 'planned' }
 
 const timeOf = (term) => term.slice(11, 16)
+
+// 생활 일정을 추가할 날짜에 이미 있는 일정: 운동 · 수업 · 생활 일정 · 운동하기 어려운 시간 (시간순)
+function itemsOnDate(key, sessions, life) {
+  const weekday = String(new Date(`${key}T00:00:00`).getDay())
+  const items = [
+    ...sessions.filter((session) => session.date === key)
+      .map((session) => ({ id: `w-${session.id}`, kind: '운동', title: session.title, start: session.time, end: session.endTime })),
+    ...loadTimetable().filter((item) => item.weekday === weekday)
+      .map((item) => ({ id: `c-${item.id}`, kind: '수업', title: item.title, start: item.startTime, end: item.endTime })),
+    ...life.filter((item) => item.start_term.startsWith(key))
+      .map((item) => ({ id: `l-${item.id}`, kind: '일정', title: item.name ?? '일정', start: timeOf(item.start_term), end: timeOf(item.end_term), life: item })),
+    ...loadUnavailablePeriods()
+      .map((period) => ({ id: `u-${period.id}`, kind: '어려운 시간', title: period.label, start: period.startTime, end: period.endTime, overnight: crossesMidnight(period) })),
+  ]
+  return items.sort((a, b) => a.start.localeCompare(b.start))
+}
 
 function monthStart(date) {
   return new Date(date.getFullYear(), date.getMonth(), 1)
@@ -87,7 +105,7 @@ export default function SchedulePage() {
   const [workoutMessage, setWorkoutMessage] = useState('')
   const [isSaving, setIsSaving] = useState(false)
 
-  // 달력에 보이는 달 + Day A/B 계산용으로 그 달에 걸친 주 전체를 불러와요.
+  // 달력에 보이는 달에 걸친 주 전체를 불러와요.
   const rangeStart = weekRange(month).start
   const rangeEnd = weekRange(new Date(month.getFullYear(), month.getMonth() + 1, 0)).end
   const { data, error, loading, reload, setData } = useAsync(() => loadPeriod(rangeStart, rangeEnd), [dateKey(rangeStart), dateKey(rangeEnd)])
@@ -99,10 +117,10 @@ export default function SchedulePage() {
   const isToday = selectedKey === todayKey
   const isYesterday = selectedKey === dateKey(addDays(today, -1))
 
-  const { start: weekStart, end: weekEnd } = weekRange(selectedDate)
-  const weekSessions = sessions.filter((session) => session.date >= dateKey(weekStart) && session.date <= dateKey(weekEnd))
   const daySessions = sessions.filter((session) => session.date === selectedKey)
   const dayLife = life.filter((item) => item.start_term.startsWith(selectedKey))
+  const formItems = form.date ? itemsOnDate(form.date, sessions, life) : []
+  const formDateLoaded = form.date >= dateKey(rangeStart) && form.date <= dateKey(rangeEnd)
   const todaySessions = sessions.filter((session) => session.date === todayKey)
 
   function selectDate(date) {
@@ -197,7 +215,6 @@ export default function SchedulePage() {
   }
 
   function renderSession(session) {
-    const label = dayLabel(weekSessions, session.id)
     const state = stateByStatus[session.status]
     const canMove = state === 'missed' && todaySessions.length === 0
 
@@ -206,9 +223,8 @@ export default function SchedulePage() {
         <MissedWorkoutCard
           key={session.id}
           title={isYesterday ? '어제는 쉬어가셨네요' : '이날은 쉬어가셨네요'}
-          note={`${label} ${formatKoreanTime(session.time)} 일정이었어요.`}
+          note={`「${session.title}」 ${formatKoreanTime(session.time)} 일정이었어요.`}
           session={session}
-          label={label}
           slots={slotsFor(session)}
           onMove={(minutes) => moveToToday(session, minutes)}
           showCalendarLink={false}
@@ -218,8 +234,10 @@ export default function SchedulePage() {
 
     return (
       <div key={session.id} className="fit-calendar__workout">
-        {state === 'done' && <span className="fit-calendar__badge">완료</span>}
-        <h3>{label} - {session.title}</h3>
+        <div className="fit-calendar__title-row">
+          <h3>{session.title}</h3>
+          {state === 'done' && <span className="fit-calendar__badge">완료</span>}
+        </div>
         <p className="fit-calendar__meta">
           {formatKoreanTime(session.time)} 시작 · {session.duration}분
           {session.completedCount > 0 && ` · ${session.completedCount}/${session.exercises.length}종목`}
@@ -275,22 +293,6 @@ export default function SchedulePage() {
           <small>{dayLife.length ? `이날 ${dayLife.length}개` : '추가하기'}</small>
         </summary>
 
-        {dayLife.length > 0 && (
-          <ul className="fit-calendar__events">
-            {dayLife.map((item) => (
-              <li key={item.id}>
-                <div>
-                  <strong>{item.name ?? '일정'}</strong>
-                  <p>{timeOf(item.start_term)} ~ {timeOf(item.end_term)}</p>
-                </div>
-                <button type="button" onClick={() => removeLifeSchedule(item)} aria-label={`${item.name ?? '일정'} 삭제`}>
-                  삭제
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-
         <form className="fit-calendar__add" onSubmit={addLifeSchedule}>
           <label>
             일정 이름
@@ -300,6 +302,31 @@ export default function SchedulePage() {
             날짜
             <input type="date" name="date" value={form.date} onChange={handleChange} required />
           </label>
+
+          {/* 겹치지 않게 고를 수 있도록 그날 이미 있는 일정을 보여줘요. */}
+          <div className="fit-calendar__existing" aria-live="polite">
+            <p className="fit-calendar__existing-title">이날 일정</p>
+            {formItems.length ? (
+              <ul className="fit-calendar__events">
+                {formItems.map((item) => (
+                  <li key={item.id} data-kind={item.kind}>
+                    <div>
+                      <strong><small className="fit-calendar__kind">{item.kind}</small>{item.title}</strong>
+                      <p>{item.start} ~ {item.overnight ? '다음 날 ' : ''}{item.end}</p>
+                    </div>
+                    {item.life && (
+                      <button type="button" onClick={() => removeLifeSchedule(item.life)} aria-label={`${item.title} 삭제`}>
+                        삭제
+                      </button>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="fit-calendar__existing-empty">비어 있는 날이에요.</p>
+            )}
+            {!formDateLoaded && <p className="fit-calendar__existing-empty">운동·생활 일정은 달력에서 그 달로 이동하면 함께 보여요.</p>}
+          </div>
           <div className="fit-calendar__times">
             <TimeSelect label="시작 시간" name="startTime" value={form.startTime} onChange={handleChange} required />
             <TimeSelect label="종료 시간" name="endTime" value={form.endTime} onChange={handleChange} required />

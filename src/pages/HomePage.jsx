@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
-import { dayLabel, loadWeek, withExerciseChecked } from '../api/plan.js'
+import { loadWeek, withExerciseChecked } from '../api/plan.js'
 import { conflictMessage, replaceSchedule } from '../api/schedule.js'
 import FitNavigation from '../components/FitNavigation.jsx'
 import MissedWorkoutCard from '../components/MissedWorkoutCard.jsx'
@@ -28,12 +28,13 @@ function RoutineSummary({ exercises }) {
   )
 }
 
-function TodayCard({ session, label, isToday, onExerciseChange }) {
+function TodayCard({ session, isToday, onExerciseChange }) {
   return (
     <div className="fit-home__card">
-      <h3>{label} - {session.title}</h3>
+      <h3>{session.title}</h3>
       <p className="fit-home__when">
         {isToday ? '오늘' : session.day} {formatKoreanTime(session.time)} · {session.duration}분
+        {session.status === '완료' && ' · 완료'}
       </p>
       <RoutineSummary exercises={session.exercises} />
 
@@ -60,7 +61,7 @@ export default function HomePage() {
   const todaySessions = sessions.filter((session) => session.date === todayKey)
   const todaySession = todaySessions.find((session) => session.status !== '완료') ?? todaySessions[0]
   const nextSession = todaySession ?? sessions.find((session) => session.date > todayKey)
-  const missed = !todaySession
+  const missed = todaySessions.length === 0
     ? sessions.find((session) => session.date === yesterdayKey && session.status === '미수행')
     : null
 
@@ -85,7 +86,7 @@ export default function HomePage() {
 
     try {
       await replaceSchedule(missed.id, { name: missed.name, start_term: `${todayKey}T${start}`, end_term: `${todayKey}T${end}` })
-      setMessage(`${dayLabel(sessions, missed.id)}를 오늘 ${formatKoreanTime(start)}로 옮겼어요.`)
+      setMessage(`「${missed.title}」 운동을 오늘 ${formatKoreanTime(start)}로 옮겼어요.`)
       reload()
     } catch (caught) {
       setMessage(caught.status === 409 ? conflictMessage(caught) : caught.message)
@@ -113,15 +114,24 @@ export default function HomePage() {
   } else if (missed) {
     todayCard = (
       <div className="fit-home__card">
-        <MissedWorkoutCard title="어제는 쉬어가셨네요," session={missed} label={dayLabel(sessions, missed.id)} slots={freeSlots} onMove={moveToToday} />
+        <MissedWorkoutCard title="어제는 쉬어가셨네요," session={missed} slots={freeSlots} onMove={moveToToday} />
       </div>
     )
+  } else if (todaySessions.length) {
+    // 오늘 운동이 여러 개면 모두 보여줘요. (다 끝낸 운동도 함께)
+    todayCard = todaySessions.map((session) => (
+      <TodayCard
+        key={session.id}
+        session={session}
+        isToday
+        onExerciseChange={updateExercise}
+      />
+    ))
   } else if (nextSession) {
     todayCard = (
       <TodayCard
         key={nextSession.id}
         session={nextSession}
-        label={dayLabel(sessions, nextSession.id)}
         isToday={nextSession.date === todayKey}
         onExerciseChange={updateExercise}
       />

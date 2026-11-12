@@ -37,6 +37,13 @@ export function inbodyInfo(form) {
   }
 }
 
+// 인바디 결과지 사진을 서버가 읽어 체지방률·골격근량·측정일을 돌려줘요. (저장은 하지 않아요)
+export function readInbodyImage(file) {
+  const form = new FormData()
+  form.append('file', file)
+  return api('/inbody/image', { method: 'POST', body: form, auth: false })
+}
+
 // 로그인 직후: 서버 정보를 이 기기 캐시(프로필·인바디·시간표)에 채워요. 서버에 없는 이름·목표 등은 기존 값을 유지해요.
 export async function hydrateFromServer() {
   const [me, blocks] = await Promise.all([api('/user'), listBlocks()])

@@ -2,7 +2,7 @@ import { imageAccept } from '../hooks/useImageFile.js'
 import './UploadPanel.css'
 
 // 사진 미리보기 칸 + 「사진 업로드」「직접 입력」 버튼
-export default function UploadPanel({ imageAlt, image, inputRef, onFileChange, onClearImage, isFormOpen, onToggleForm }) {
+export default function UploadPanel({ imageAlt, image, inputRef, onFileChange, onClearImage, isFormOpen, onToggleForm, note }) {
   return (
     <div className="fit-upload">
       <div className="fit-upload__preview">
@@ -27,7 +27,7 @@ export default function UploadPanel({ imageAlt, image, inputRef, onFileChange, o
       </div>
 
       {image && (
-        <p className="fit-upload__note">사진 자동 인식은 준비 중이에요. 사진을 보며 직접 입력해 주세요.</p>
+        <p className="fit-upload__note" role="status">{note ?? '사진 자동 인식은 준비 중이에요. 사진을 보며 직접 입력해 주세요.'}</p>
       )}
     </div>
   )

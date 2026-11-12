@@ -38,10 +38,10 @@ export const DEFAULT_PERIOD_LABEL = '운동하기 어려운 시간'
 
 // 자주 쓰는 시간대 (온보딩에서 눌러서 고를 수 있어요)
 export const presetPeriods = [
-  { id: 'sleep', label: '취침', icon: '🌙', startTime: '23:00', endTime: '07:00' },
-  { id: 'morning', label: '아침', icon: '🌅', startTime: '07:00', endTime: '09:00' },
-  { id: 'lunch', label: '점심', icon: '🍱', startTime: '12:00', endTime: '13:00' },
-  { id: 'dinner', label: '저녁', icon: '🍽️', startTime: '18:00', endTime: '19:00' },
+  { id: 'sleep', label: '취침', startTime: '23:00', endTime: '07:00' },
+  { id: 'morning', label: '아침', startTime: '07:00', endTime: '09:00' },
+  { id: 'lunch', label: '점심', startTime: '12:00', endTime: '13:00' },
+  { id: 'dinner', label: '저녁', startTime: '18:00', endTime: '19:00' },
 ]
 
 // 여러 시간대 목록을 검사해요. 예전처럼 하나만 저장된 값도 목록으로 바꿔 줘요.

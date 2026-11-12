@@ -50,12 +50,6 @@
   cursor: pointer;
 }
 
-.fit-avail__icon {
-  margin-bottom: 4px;
-  font-size: 18px;
-  line-height: 1;
-}
-
 .fit-avail__preset strong {
   font-size: 15px;
 }

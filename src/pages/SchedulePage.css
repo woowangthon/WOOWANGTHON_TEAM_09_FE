@@ -198,10 +198,16 @@
   border-top: 1px solid var(--calendar-border);
 }
 
+.fit-calendar__title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
 .fit-calendar__badge {
-  position: absolute;
-  top: -22px;
-  right: 0;
+  flex-shrink: 0;
+  margin-top: 1px;
   padding: 2px 8px;
   border-radius: 999px;
   background: var(--calendar-mint);
@@ -294,6 +300,54 @@
   font: inherit;
   font-size: 12px;
   cursor: pointer;
+}
+
+/* 생활 일정 추가: 그날 이미 있는 일정 */
+.fit-calendar__existing {
+  display: grid;
+  gap: 6px;
+}
+
+.fit-calendar__existing-title {
+  margin: 0;
+  color: var(--calendar-muted);
+  font-size: 13px;
+}
+
+.fit-calendar__existing .fit-calendar__events {
+  margin: 0;
+}
+
+.fit-calendar__existing strong {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.fit-calendar__kind {
+  padding: 1px 6px;
+  border: 1px solid var(--calendar-border);
+  border-radius: 999px;
+  color: var(--calendar-muted);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.fit-calendar__events li[data-kind='운동'] .fit-calendar__kind {
+  border-color: var(--calendar-mint);
+  color: var(--calendar-mint);
+}
+
+.fit-calendar__events li[data-kind='일정'] .fit-calendar__kind {
+  border-color: #ff9ec0;
+  color: #ff9ec0;
+}
+
+.fit-calendar__existing-empty {
+  margin: 0;
+  color: #7a7a77;
+  font-size: 12px;
 }
 
 .fit-calendar__add {

@@ -50,7 +50,8 @@ export function toSession(schedule, todayKey = dateKey(new Date())) {
   return {
     id: schedule.id,
     name: schedule.name,
-    title: schedule.name ?? '운동',
+    // AI가 붙이는 '운동: ' 접두어는 빼고 보여줘요. 예: '운동: 하체 (저강도)' → '하체 (저강도)'
+    title: schedule.name?.replace(/^운동\s*[:：]\s*/, '').trim() || '운동',
     date,
     day: `${weekdays[parseDateKey(date).getDay()]}요일`,
     time: timeOf(schedule.start_term),
@@ -83,11 +84,6 @@ export async function loadSession(id) {
   return toSession(await getSchedule(id))
 }
 
-// 그 주에서 n번째 운동 → Day A, Day B ...
-export function dayLabel(sessions, id) {
-  const index = sessions.findIndex((session) => session.id === id)
-  return `Day ${String.fromCharCode(65 + Math.max(index, 0))}`
-}
 
 // AI 생성은 수십 초 걸리고 비용이 들어서, 같은 주 요청이 진행 중이면 그 요청을 같이 기다려요.
 const pending = new Map()

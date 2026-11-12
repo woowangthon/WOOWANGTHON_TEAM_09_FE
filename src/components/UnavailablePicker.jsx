@@ -67,7 +67,6 @@ export default function UnavailablePicker({ title, initial, isSaving, onDone, fo
               aria-pressed={isSelected(preset.id)}
               onClick={() => togglePreset(preset)}
             >
-              <span className="fit-avail__icon" aria-hidden="true">{preset.icon}</span>
               <strong>{preset.label}</strong>
               <small>{preset.startTime} ~ {preset.endTime}</small>
               <span className="fit-avail__check" aria-hidden="true" />

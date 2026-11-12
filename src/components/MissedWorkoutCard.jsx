@@ -11,7 +11,7 @@ function partOfDay(minutes) {
 }
 
 // 하지 못한 운동을 오늘 빈 시간으로 옮기자고 제안하는 카드 내용
-export default function MissedWorkoutCard({ title, note, session, label, slots, onMove, showCalendarLink = true }) {
+export default function MissedWorkoutCard({ title, note, session, slots, onMove, showCalendarLink = true }) {
   const [showOthers, setShowOthers] = useState(false)
   const preferred = slots.find((slot) => slot >= 18 * 60) ?? slots[0]
   const others = slots.filter((slot) => slot !== preferred).slice(0, 3)
@@ -22,13 +22,13 @@ export default function MissedWorkoutCard({ title, note, session, label, slots, 
       {note && <p className="fit-missed__note">{note}</p>}
       {preferred === undefined ? (
         <>
-          <p>{label}({session.title})를 오늘 할 수 있는 빈 시간이 없어요.</p>
+          <p>「{session.title}」 운동을 오늘 할 수 있는 빈 시간이 없어요.</p>
           {showCalendarLink && <Link className="fit-missed__button" to="/schedule">캘린더에서 확인하기</Link>}
         </>
       ) : (
         <>
           <p>
-            {label}를 오늘 {partOfDay(preferred)}에 해볼까요?<br />캘린더에 비어 있는 시간이에요.
+            「{session.title}」 운동을 오늘 {partOfDay(preferred)}에 해볼까요?<br />캘린더에 비어 있는 시간이에요.
           </p>
           <button className="fit-missed__button" type="button" onClick={() => onMove(preferred)}>
             오늘 {formatKoreanTime(toTime(preferred))}에 하기
