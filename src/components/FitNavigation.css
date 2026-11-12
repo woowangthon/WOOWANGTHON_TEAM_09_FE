@@ -4,7 +4,7 @@
   bottom: calc(22px + env(safe-area-inset-bottom));
   left: 50%;
   display: flex;
-  width: min(280px, calc(100% - 48px));
+  width: min(340px, calc(100% - 48px));
   padding: 3px 6px;
   box-sizing: border-box;
   border: 1px solid rgba(255, 255, 255, 0.14);

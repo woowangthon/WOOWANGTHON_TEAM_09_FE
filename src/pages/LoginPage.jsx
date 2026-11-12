@@ -3,13 +3,14 @@ import { Navigate, useNavigate } from 'react-router'
 import { login, loginIdPattern, signup } from '../api/auth.js'
 import { clearLocalData, hydrateFromServer } from '../api/profile.js'
 import { getToken } from '../api/client.js'
+import { departments, findCollege } from '../campus.js'
 import './SignupPage.css'
 import './LoginPage.css'
 
 export default function LoginPage() {
   const navigate = useNavigate()
   const [mode, setMode] = useState('login')
-  const [form, setForm] = useState({ name: '', password: '', confirm: '' })
+  const [form, setForm] = useState({ name: '', password: '', confirm: '', department: '' })
   const [message, setMessage] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const isJoin = mode === 'join'
@@ -33,6 +34,7 @@ export default function LoginPage() {
     if (!loginIdPattern.test(form.name)) return '아이디는 영문 소문자로 시작하는 영문 소문자·숫자 4~20자예요.'
     if (form.password.length < 8) return '비밀번호는 8자 이상이어야 해요.'
     if (form.password !== form.confirm) return '비밀번호가 서로 달라요.'
+    if (form.department.trim() && !findCollege(form.department)) return '목록에 없는 학과예요. 학과 이름을 다시 확인해 주세요.'
     return ''
   }
 
@@ -51,7 +53,7 @@ export default function LoginPage() {
       clearLocalData()
 
       if (isJoin) {
-        await signup(form.name, form.password)
+        await signup(form.name, form.password, findCollege(form.department)?.department)
         navigate('/signup', { replace: true })
         return
       }
@@ -112,6 +114,28 @@ export default function LoginPage() {
                 maxLength={128}
                 placeholder="비밀번호를 한 번 더"
               />
+            </label>
+          )}
+          {isJoin && (
+            <label>
+              <span>소속 학과 (선택)</span>
+              <input
+                name="department"
+                value={form.department}
+                onChange={handleChange}
+                list="join-departments"
+                autoComplete="off"
+                maxLength={30}
+                placeholder="예: 컴퓨터공학과"
+              />
+              <datalist id="join-departments">
+                {departments.map((name) => <option key={name} value={name} />)}
+              </datalist>
+              <small className="fit-login__college" role="status">
+                {findCollege(form.department)
+                  ? <>소속 단과대 <strong>{findCollege(form.department).college}</strong> · 학과는 가입 후 바꿀 수 없어요</>
+                  : '입력하면 캠퍼스 현황에서 단과대별 순위에 함께해요'}
+              </small>
             </label>
           )}
         </div>

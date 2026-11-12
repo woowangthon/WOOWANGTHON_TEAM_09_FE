@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { logout } from '../api/auth.js'
+import { loadCampus } from '../campus.js'
 import FitNavigation from '../components/FitNavigation.jsx'
 import { loadInbody } from '../inbody.js'
 import { loadTimetable } from '../timetable.js'
@@ -92,6 +93,7 @@ export default function ProfilePage() {
   const [profile] = useState(loadProfile)
   const [inbody] = useState(loadInbody)
   const [timetableCount] = useState(() => loadTimetable().length)
+  const [campus] = useState(loadCampus)
 
   if (!profile) {
     return (
@@ -131,6 +133,14 @@ export default function ProfilePage() {
           {environmentLabels[profile.environment] && (
             <div><dt>헬스장</dt><dd>{environmentLabels[profile.environment]}</dd></div>
           )}
+        </dl>
+      </section>
+
+      <section className="fit-profile__group" aria-labelledby="profile-campus">
+        <h2 id="profile-campus">소속</h2>
+        <dl className="fit-profile__card fit-profile__list">
+          <div><dt>학과</dt><dd>{campus.department ?? '없음'}</dd></div>
+          <div><dt>단과대학</dt><dd>{campus.college ?? '기타'}</dd></div>
         </dl>
       </section>
 

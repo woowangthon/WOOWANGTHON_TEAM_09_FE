@@ -91,15 +91,15 @@
 
 @media (prefers-reduced-motion: no-preference) {
   /* 화면 진입: 직속 내용이 차례로 떠올라요. 하단 메뉴는 위치에 transform을 쓰므로 제외해요. */
-  :is(.fit-home, .fit-report, .fit-calendar, .fit-plan, .fit-generate) > :not(.fit-nav) {
+  :is(.fit-home, .fit-report, .fit-calendar, .fit-plan, .fit-generate, .fit-campus) > :not(.fit-nav) {
     animation: fit-rise 0.8s var(--motion-ease) both;
   }
 
-  :is(.fit-home, .fit-report, .fit-calendar, .fit-plan, .fit-generate) > :not(.fit-nav):nth-child(2) { animation-delay: 0.1s; }
-  :is(.fit-home, .fit-report, .fit-calendar, .fit-plan, .fit-generate) > :not(.fit-nav):nth-child(3) { animation-delay: 0.2s; }
-  :is(.fit-home, .fit-report, .fit-calendar, .fit-plan, .fit-generate) > :not(.fit-nav):nth-child(4) { animation-delay: 0.3s; }
-  :is(.fit-home, .fit-report, .fit-calendar, .fit-plan, .fit-generate) > :not(.fit-nav):nth-child(5) { animation-delay: 0.4s; }
-  :is(.fit-home, .fit-report, .fit-calendar, .fit-plan, .fit-generate) > :not(.fit-nav):nth-child(n + 6) { animation-delay: 0.5s; }
+  :is(.fit-home, .fit-report, .fit-calendar, .fit-plan, .fit-generate, .fit-campus) > :not(.fit-nav):nth-child(2) { animation-delay: 0.1s; }
+  :is(.fit-home, .fit-report, .fit-calendar, .fit-plan, .fit-generate, .fit-campus) > :not(.fit-nav):nth-child(3) { animation-delay: 0.2s; }
+  :is(.fit-home, .fit-report, .fit-calendar, .fit-plan, .fit-generate, .fit-campus) > :not(.fit-nav):nth-child(4) { animation-delay: 0.3s; }
+  :is(.fit-home, .fit-report, .fit-calendar, .fit-plan, .fit-generate, .fit-campus) > :not(.fit-nav):nth-child(5) { animation-delay: 0.4s; }
+  :is(.fit-home, .fit-report, .fit-calendar, .fit-plan, .fit-generate, .fit-campus) > :not(.fit-nav):nth-child(n + 6) { animation-delay: 0.5s; }
 
   /* 불러오는 중 카드가 실제 카드로 바뀔 때 부드럽게 나타나요. */
   :is(.fit-home__card, .fit-calendar__workout, .fit-report__next li) {
@@ -107,14 +107,14 @@
   }
 
   /* 운동 일정 목록은 한 줄씩 */
-  :is(.fit-plan__sessions, .fit-report__next ul, .fit-check__list) > li {
+  :is(.fit-plan__sessions, .fit-report__next ul, .fit-check__list, .fit-campus__ranking, .fit-group__list) > li {
     animation: fit-rise 0.65s var(--motion-ease) both;
   }
 
-  :is(.fit-plan__sessions, .fit-report__next ul, .fit-check__list) > li:nth-child(2) { animation-delay: 0.08s; }
-  :is(.fit-plan__sessions, .fit-report__next ul, .fit-check__list) > li:nth-child(3) { animation-delay: 0.16s; }
-  :is(.fit-plan__sessions, .fit-report__next ul, .fit-check__list) > li:nth-child(4) { animation-delay: 0.24s; }
-  :is(.fit-plan__sessions, .fit-report__next ul, .fit-check__list) > li:nth-child(n + 5) { animation-delay: 0.32s; }
+  :is(.fit-plan__sessions, .fit-report__next ul, .fit-check__list, .fit-campus__ranking, .fit-group__list) > li:nth-child(2) { animation-delay: 0.08s; }
+  :is(.fit-plan__sessions, .fit-report__next ul, .fit-check__list, .fit-campus__ranking, .fit-group__list) > li:nth-child(3) { animation-delay: 0.16s; }
+  :is(.fit-plan__sessions, .fit-report__next ul, .fit-check__list, .fit-campus__ranking, .fit-group__list) > li:nth-child(4) { animation-delay: 0.24s; }
+  :is(.fit-plan__sessions, .fit-report__next ul, .fit-check__list, .fit-campus__ranking, .fit-group__list) > li:nth-child(n + 5) { animation-delay: 0.32s; }
 
   /* 온보딩: 질문 한 줄씩 → 설명 → 선택지 차례로 */
   .fit-setup > :not(.fit-setup__progress, .fit-setup__message) {
@@ -122,7 +122,7 @@
   }
 
   /* 큰 제목: 왼쪽에서 오른쪽으로 스르륵, 여러 줄이면 한 줄씩 */
-  :is(.fit-home, .fit-report, .fit-plan, .fit-generate) h1,
+  :is(.fit-home, .fit-report, .fit-plan, .fit-generate) h1, .fit-campus__header h1,
   .fit-setup h1 > span,
   .fit-setup h1:not(:has(> span)) {
     -webkit-mask-image: linear-gradient(90deg, #000 45%, transparent 55%);
@@ -157,7 +157,7 @@
   }
 
   /* 수행률 막대는 왼쪽부터 차오르고, 요일 원은 톡 나타나요. */
-  .fit-report__bar span {
+  :is(.fit-report__bar, .fit-campus__bar) span {
     transform-origin: left center;
     animation: fit-grow 1.3s var(--motion-ease) 0.5s both;
   }

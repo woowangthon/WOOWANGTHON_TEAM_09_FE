@@ -2,6 +2,7 @@ import { api } from './client.js'
 import { listBlocks, readUnavailablePeriods, refreshTimetable } from './weeklyBlocks.js'
 import { getUnavailablePeriod, getUnavailablePeriods } from '../workoutAvailability.js'
 import { loadPrefs, savePrefs } from '../userPrefs.js'
+import { saveCampus } from '../campus.js'
 
 // 운동 경험: 앱 선택지 ↔ 서버 자유 입력 문장
 export const experienceText = {
@@ -78,6 +79,7 @@ export async function hydrateFromServer() {
     }
   }
 
+  saveCampus({ department: me.department, college: me.college })
   savePrefs({ unavailablePeriods }, me.name)
   await refreshTimetable(blocks)
   return me

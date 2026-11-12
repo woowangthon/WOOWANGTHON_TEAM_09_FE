@@ -55,3 +55,13 @@
 .fit-login .fit-setup__options {
   margin-top: 28px;
 }
+
+.fit-login__college {
+  padding-left: 6px;
+  color: var(--setup-muted);
+  font-size: 11px;
+}
+
+.fit-login__college strong {
+  color: var(--setup-mint);
+}

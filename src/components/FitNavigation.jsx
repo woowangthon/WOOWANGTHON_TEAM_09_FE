@@ -17,6 +17,11 @@ export default function FitNavigation() {
           <path d="M4 9h16M8 3v4m8-4v4" />
         </svg>
       </NavLink>
+      <NavLink viewTransition to="/campus" aria-label="캠퍼스 현황">
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+          <path d="M6 19v-5m6 5V9m6 10V5M4 19h16" />
+        </svg>
+      </NavLink>
       <NavLink viewTransition to="/profile" aria-label="프로필">
         <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
           <circle cx="12" cy="12" r="8" />
