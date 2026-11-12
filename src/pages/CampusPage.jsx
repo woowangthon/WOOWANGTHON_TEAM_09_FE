@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router'
 import { loadCampus, loadDashboard } from '../campus.js'
 import FitNavigation from '../components/FitNavigation.jsx'
 import { useAsync } from '../hooks/useAsync.js'
@@ -100,6 +101,7 @@ export default function CampusPage() {
           <p>충북대학교 캠퍼스 운동 현황</p>
           <h1>캠퍼스 현황</h1>
         </div>
+        <Link className="fit-campus__link" to="/campus/groups">그룹 관리 &gt;</Link>
       </header>
 
       <div className="fit-campus__tabs" role="tablist" aria-label="보기 선택">

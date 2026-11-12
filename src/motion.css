@@ -107,7 +107,7 @@
   }
 
   /* 운동 일정 목록은 한 줄씩 */
-  :is(.fit-plan__sessions, .fit-report__next ul, .fit-check__list, .fit-campus__ranking) > li {
+  :is(.fit-plan__sessions, .fit-report__next ul, .fit-check__list, .fit-campus__ranking, .fit-group__list) > li {
     animation: fit-rise 0.65s var(--motion-ease) both;
   }
 
