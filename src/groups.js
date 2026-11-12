@@ -92,7 +92,7 @@ export async function loadMyGroups() {
 
   const { mine } = await loadDashboard()
   if (mine && mine.college !== '기타') {
-    groups.push({ id: 'college', name: mine.college, tag: '단과대', icon: 'building', participants: mine.participants ?? mine.members, rate: mine.rate })
+    groups.push({ id: 'college', name: mine.college, tag: '단과대', icon: 'building', participants: mine.active_members ?? 0, rate: mine.rate })
   }
   if (department) {
     groups.push({ id: 'department', name: department, tag: '학과', icon: 'cap', meta: '학과별 통계는 준비 중이에요' })
@@ -109,7 +109,7 @@ export async function loadGroup(id) {
   if (id === 'college') {
     const { mine } = await loadDashboard()
     if (!mine || mine.college === '기타') return null
-    return { id, name: mine.college, icon: 'building', intro: '같은 단과대 학생들과 함께해요', participants: mine.participants ?? mine.members, rate: mine.rate, ranking: null, isJoined: true, isAuto: true }
+    return { id, name: mine.college, icon: 'building', intro: '같은 단과대 학생들과 함께해요', participants: mine.active_members ?? 0, rate: mine.rate, ranking: null, isJoined: true, isAuto: true }
   }
 
   const { joined, created } = loadStore()
