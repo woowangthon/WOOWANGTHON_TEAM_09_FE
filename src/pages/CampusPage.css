@@ -24,9 +24,8 @@
   text-align: left;
 }
 
-.fit-campus h1,
-.fit-campus h2,
-.fit-campus p {
+/* 기본값만 초기화해요. :where로 우선순위를 0으로 둬서 각 요소의 클래스 스타일이 이기게 해요. */
+:where(.fit-campus) :is(h1, h2, p) {
   margin: 0;
   color: inherit;
   font-family: inherit;
