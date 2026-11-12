@@ -66,10 +66,3 @@ export async function loadDashboard() {
     mine: colleges.find((item) => item.college === data.my_college) ?? null,
   }
 }
-
-// 그룹 탐색 화면의 예시 그룹 (그룹 기능은 아직 서버에 없어요)
-export const demoGroups = [
-  { id: 'running', name: '우왕코치 러닝크루', tag: '운동 그룹', description: '함께 달리며 운동 습관을 만드는 그룹', participants: 15, rate: 88 },
-  { id: 'morning', name: '아침 7시 기상 운동', tag: '운동 그룹', description: '수업 전에 가볍게 운동해요', participants: 21, rate: 74 },
-  { id: 'dorm', name: '기숙사 홈트 모임', tag: '운동 그룹', description: '헬스장 없이 방에서 하는 운동', participants: 12, rate: 69 },
-]

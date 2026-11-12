@@ -132,6 +132,17 @@
   display: none;
 }
 
+/* 이번 주 계획 화면(다른 계획 추천)으로 가는 입구 */
+.fit-home__plan-link {
+  display: block;
+  width: fit-content;
+  margin: 12px 0 0 auto;
+  padding: 6px 2px;
+  color: var(--home-muted);
+  font-size: 12px;
+  text-decoration: none;
+}
+
 /* 요일 점 */
 .fit-home__week {
   display: block;

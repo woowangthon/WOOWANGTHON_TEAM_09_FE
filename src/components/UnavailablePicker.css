@@ -206,6 +206,44 @@
   font-size: 16px;
 }
 
+.fit-avail__days {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.fit-avail__days legend {
+  margin-bottom: 4px;
+  padding: 0;
+  color: #c2c2bf;
+  font-size: 13px;
+}
+
+.fit-avail__days div {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.fit-avail__days button {
+  aspect-ratio: 1;
+  max-height: 40px;
+  border: 1px solid #464644;
+  border-radius: 50%;
+  background: #1b1b1a;
+  color: #a9a9a6;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.fit-avail__days button[aria-pressed='true'] {
+  border-color: var(--avail-mint);
+  background: var(--avail-mint);
+  color: #10302a;
+  font-weight: 700;
+}
+
 .fit-avail__times {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

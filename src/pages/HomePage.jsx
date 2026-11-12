@@ -168,6 +168,10 @@ export default function HomePage() {
         </div>
       )}
 
+      {sessions.length > 0 && (
+        <Link className="fit-home__plan-link" to="/plan">이번 주 계획 보기 ›</Link>
+      )}
+
       <FitNavigation />
     </div>
   )

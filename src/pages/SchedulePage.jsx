@@ -9,7 +9,7 @@ import WorkoutChecklist from '../components/WorkoutChecklist.jsx'
 import { getBusyPeriods, getFreeSlots, toTime } from '../freeTime.js'
 import { useAsync } from '../hooks/useAsync.js'
 import { loadTimetable } from '../timetable.js'
-import { crossesMidnight, loadUnavailablePeriods } from '../workoutAvailability.js'
+import { getUnavailableSegments, loadUnavailablePeriods } from '../workoutAvailability.js'
 import { addDays, dateKey, formatKoreanTime, weekdays, weekRange } from '../workoutPlan.js'
 import './SchedulePage.css'
 
@@ -30,8 +30,8 @@ function itemsOnDate(key, sessions, life) {
       .map((item) => ({ id: `c-${item.id}`, kind: '수업', title: item.title, start: item.startTime, end: item.endTime })),
     ...life.filter((item) => item.start_term.startsWith(key))
       .map((item) => ({ id: `l-${item.id}`, kind: '일정', title: item.name ?? '일정', start: timeOf(item.start_term), end: timeOf(item.end_term), life: item })),
-    ...loadUnavailablePeriods()
-      .map((period) => ({ id: `u-${period.id}`, kind: '어려운 시간', title: period.label, start: period.startTime, end: period.endTime, overnight: crossesMidnight(period) })),
+    ...getUnavailableSegments(loadUnavailablePeriods(), weekday)
+      .map((segment, index) => ({ id: `u-${segment.period.id}-${index}`, kind: '어려운 시간', title: segment.period.label, start: segment.startTime, end: segment.endTime })),
   ]
   return items.sort((a, b) => a.start.localeCompare(b.start))
 }
@@ -312,7 +312,7 @@ export default function SchedulePage() {
                   <li key={item.id} data-kind={item.kind}>
                     <div>
                       <strong><small className="fit-calendar__kind">{item.kind}</small>{item.title}</strong>
-                      <p>{item.start} ~ {item.overnight ? '다음 날 ' : ''}{item.end}</p>
+                      <p>{item.start} ~ {item.end}</p>
                     </div>
                     {item.life && (
                       <button type="button" onClick={() => removeLifeSchedule(item.life)} aria-label={`${item.title} 삭제`}>

@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import TimeSelect from './TimeSelect.jsx'
-import { crossesMidnight, getUnavailablePeriod, presetPeriods } from '../workoutAvailability.js'
+import { ALL_DAYS, crossesMidnight, daysText, getUnavailablePeriod, normalizeDays, presetPeriods } from '../workoutAvailability.js'
 import './UnavailablePicker.css'
 
-const emptyDraft = { id: '', label: '', startTime: '', endTime: '' }
+const emptyDraft = { id: '', label: '', startTime: '', endTime: '', weekdays: ALL_DAYS }
+const dayChips = [['1', '월'], ['2', '화'], ['3', '수'], ['4', '목'], ['5', '금'], ['6', '토'], ['0', '일']]
 
 function timeText(period) {
-  return `${period.startTime} ~ ${crossesMidnight(period) ? '다음 날 ' : ''}${period.endTime}`
+  return `${daysText(period.weekdays)} ${period.startTime} ~ ${crossesMidnight(period) ? '다음 날 ' : ''}${period.endTime}`
 }
 
 // 운동하기 어려운 시간대를 여러 개 고르는 화면. 자주 쓰는 시간대는 눌러서 켜고 끄고, 직접 추가·수정도 할 수 있어요.
@@ -35,12 +36,28 @@ export default function UnavailablePicker({ title, initial, isSaving, onDone, fo
     setMessage('')
   }
 
+  function toggleDay(day) {
+    setDraft((previous) => ({
+      ...previous,
+      weekdays: previous.weekdays.includes(day) ? previous.weekdays.filter((item) => item !== day) : [...previous.weekdays, day],
+    }))
+    setMessage('')
+  }
+
   function applyDraft() {
-    const period = getUnavailablePeriod(draft)
-    if (!period) {
+    const time = getUnavailablePeriod(draft)
+    if (!time) {
       setMessage('시작과 종료 시간을 서로 다르게 선택해 주세요.')
       return
     }
+    if (draft.weekdays.length === 0) {
+      setMessage('요일을 하나 이상 골라 주세요.')
+      return
+    }
+
+    // 7일 모두면 '매일'로 저장해요.
+    const days = normalizeDays(draft.weekdays)
+    const period = { ...time, weekdays: days ?? undefined }
 
     const label = draft.label.trim() || '직접 추가'
     if (draft.id) {
@@ -89,7 +106,7 @@ export default function UnavailablePicker({ title, initial, isSaving, onDone, fo
                   <strong>{period.label}</strong>
                   <small>{timeText(period)}</small>
                 </span>
-                <button type="button" className="fit-avail__edit" onClick={() => { setMessage(''); setDraft({ ...period }) }}>
+                <button type="button" className="fit-avail__edit" onClick={() => { setMessage(''); setDraft({ ...period, weekdays: period.weekdays ?? ALL_DAYS }) }}>
                   수정
                 </button>
                 <button type="button" className="fit-avail__remove" onClick={() => remove(period.id)} aria-label={`${period.label} 삭제`}>
@@ -109,6 +126,16 @@ export default function UnavailablePicker({ title, initial, isSaving, onDone, fo
               이름
               <input name="label" value={draft.label} onChange={updateDraft} placeholder="예: 동아리, 아르바이트" maxLength={12} />
             </label>
+            <fieldset className="fit-avail__days">
+              <legend>요일</legend>
+              <div>
+                {dayChips.map(([day, name]) => (
+                  <button key={day} type="button" aria-pressed={draft.weekdays.includes(day)} onClick={() => toggleDay(day)}>
+                    {name}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
             <div className="fit-avail__times">
               <TimeSelect label="시작 시간" name="startTime" value={draft.startTime} onChange={updateDraft} />
               <TimeSelect label="종료 시간" name="endTime" value={draft.endTime} onChange={updateDraft} />

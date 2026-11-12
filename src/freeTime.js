@@ -15,7 +15,7 @@ export function getBusyPeriods(date, periods = []) {
   const weekday = String(date.getDay())
 
   return [
-    ...getUnavailableSegments(loadUnavailablePeriods()),
+    ...getUnavailableSegments(loadUnavailablePeriods(), weekday),
     ...loadTimetable().filter((item) => item.weekday === weekday),
     ...periods,
   ].map((period) => ({ start: toMinutes(period.startTime), end: toMinutes(period.endTime) }))

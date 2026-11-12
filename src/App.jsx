@@ -14,7 +14,6 @@ import SchedulePage from './pages/SchedulePage'
 import ProfilePage from './pages/ProfilePage'
 import ReportPage from './pages/ReportPage'
 import CampusPage from './pages/CampusPage'
-import GroupPage from './pages/GroupPage'
 
 // 로그인하지 않았으면 로그인 화면으로 보내요.
 function RequireAuth() {
@@ -40,7 +39,6 @@ export default function App() {
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/report" element={<ReportPage />} />
             <Route path="/campus" element={<CampusPage />} />
-            <Route path="/campus/groups" element={<GroupPage />} />
           </Route>
           <Route path="*" element={<h1>페이지를 찾을 수 없어요</h1>} />
         </Routes>

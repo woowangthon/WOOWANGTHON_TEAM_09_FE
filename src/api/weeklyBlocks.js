@@ -1,13 +1,14 @@
 import { api } from './client.js'
 import { loadTimetable, saveTimetable } from '../timetable.js'
-import { DEFAULT_PERIOD_LABEL, getUnavailablePeriods, getUnavailableSegments, loadUnavailablePeriods } from '../workoutAvailability.js'
+import { DEFAULT_PERIOD_LABEL, daysText, getUnavailablePeriods, getUnavailableSegments, loadUnavailablePeriods } from '../workoutAvailability.js'
+import { weekdays as dayNames } from '../workoutPlan.js'
 
 // 서버 반복 일정 중 '운동하기 어려운 시간'은 이 이름으로 시작해요.
 // 이름 뒤에 그 구간을 만든 시간대들을 적어 두어 다른 기기에서도 복원할 수 있게 해요.
-// 예: 운동하기 어려운 시간 · 취침 (매일 23:00~07:00) · 아침 (매일 07:00~09:00)
+// 예: 운동하기 어려운 시간 · 취침 (매일 23:00~07:00) · 동아리 (월·수 18:00~20:00)
 // 예전 형식(운동하기 어려운 시간 (매일 22:00~07:00))도 읽을 수 있어요.
 export const UNAVAILABLE_NAME = '운동하기 어려운 시간'
-const periodsInName = /(?:·\s*([^·(]+?)\s*)?\(매일 (\d{2}:\d{2})~(\d{2}:\d{2})\)/g
+const periodsInName = /(?:·\s*([^·(]+?)\s*)?\((매일|[일월화수목금토](?:·[일월화수목금토])*) (\d{2}:\d{2})~(\d{2}:\d{2})\)/g
 const NAME_LIMIT = 100
 
 // 앱 요일(0=일 ~ 6=토) ↔ 서버 요일(1=월 ~ 7=일)
@@ -31,9 +32,10 @@ function isUnavailable(block) {
 export function readUnavailablePeriods(blocks) {
   const found = new Map()
   for (const block of blocks.filter(isUnavailable)) {
-    for (const [, label, startTime, endTime] of block.name.matchAll(periodsInName)) {
-      const item = { label: label?.trim() || DEFAULT_PERIOD_LABEL, startTime, endTime }
-      found.set(`${item.label}|${startTime}|${endTime}`, item)
+    for (const [, label, days, startTime, endTime] of block.name.matchAll(periodsInName)) {
+      const weekdays = days === '매일' ? null : days.split('·').map((day) => String(dayNames.indexOf(day)))
+      const item = { label: label?.trim() || DEFAULT_PERIOD_LABEL, startTime, endTime, weekdays }
+      found.set(`${item.label}|${days}|${startTime}|${endTime}`, item)
     }
   }
   return getUnavailablePeriods([...found.values()])
@@ -61,14 +63,14 @@ export async function refreshTimetable(knownBlocks) {
   return loadTimetable()
 }
 
-// 시간대들을 하루 구간으로 펼친 뒤 겹치거나 맞닿는 것끼리 합쳐요. (서버는 같은 요일 겹침을 거부해요)
-function mergedSegments(periods) {
-  const segments = periods
-    .flatMap((period) => getUnavailableSegments([period]).map((segment) => ({
+// 그 요일의 시간대 구간을 펼친 뒤 겹치거나 맞닿는 것끼리 합쳐요. (서버는 같은 요일 겹침을 거부해요)
+function mergedSegments(periods, weekday) {
+  const segments = getUnavailableSegments(periods, weekday)
+    .map((segment) => ({
       start: toMinutes(segment.startTime),
       end: segment.endTime === '24:00' ? 24 * 60 : toMinutes(segment.endTime),
-      period,
-    })))
+      period: segment.period,
+    }))
     .sort((a, b) => a.start - b.start)
 
   const merged = []
@@ -85,16 +87,16 @@ function mergedSegments(periods) {
 }
 
 function pieceName(periods) {
-  const name = [UNAVAILABLE_NAME, ...periods.map((period) => `${period.label} (매일 ${period.startTime}~${period.endTime})`)].join(' · ')
+  const name = [UNAVAILABLE_NAME, ...periods.map((period) => `${period.label} (${daysText(period.weekdays)} ${period.startTime}~${period.endTime})`)].join(' · ')
   return name.slice(0, NAME_LIMIT)
 }
 
-// 매일 반복되는 어려운 시간대들을 요일별 구간으로 나누고, 수업 시간은 빼요.
+// 어려운 시간대들을 요일별 구간으로 나누고, 수업 시간은 빼요.
 export function unavailablePieces(periods, classes) {
-  const groups = mergedSegments(periods)
   const pieces = []
 
   for (let weekday = 0; weekday < 7; weekday += 1) {
+    const groups = mergedSegments(periods, weekday)
     const busy = classes
       .filter((item) => item.weekday === String(weekday))
       .map((item) => [toMinutes(item.startTime), toMinutes(item.endTime)])

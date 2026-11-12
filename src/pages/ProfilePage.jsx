@@ -5,7 +5,7 @@ import { loadCampus } from '../campus.js'
 import FitNavigation from '../components/FitNavigation.jsx'
 import { loadInbody } from '../inbody.js'
 import { loadTimetable } from '../timetable.js'
-import { getUnavailablePeriod, getUnavailablePeriods } from '../workoutAvailability.js'
+import { daysText, getUnavailablePeriod, getUnavailablePeriods } from '../workoutAvailability.js'
 import './ProfilePage.css'
 
 const goalLabels = {
@@ -55,7 +55,7 @@ function loadProfile() {
 function unavailableLabel(profile) {
   const periods = getUnavailablePeriods(profile.unavailablePeriods, getUnavailablePeriod(profile.unavailablePeriod))
   if (!periods.length) return '없음'
-  if (periods.length <= 2) return periods.map((period) => `${period.label} ${period.startTime}~${period.endTime}`).join(', ')
+  if (periods.length <= 2) return periods.map((period) => `${period.label}${period.weekdays ? `(${daysText(period.weekdays)})` : ''} ${period.startTime}~${period.endTime}`).join(', ')
 
   return `${periods.slice(0, 2).map((period) => period.label).join(', ')} 외 ${periods.length - 2}개`
 }
