@@ -1,5 +1,5 @@
 import { loadTimetable } from './timetable.js'
-import { getUnavailableSegments, loadUnavailablePeriod } from './workoutAvailability.js'
+import { getUnavailableSegments, loadUnavailablePeriods } from './workoutAvailability.js'
 
 export function toMinutes(time) {
   const [hour, minute] = time.split(':').map(Number)
@@ -15,7 +15,7 @@ export function getBusyPeriods(date, periods = []) {
   const weekday = String(date.getDay())
 
   return [
-    ...getUnavailableSegments(loadUnavailablePeriod()),
+    ...getUnavailableSegments(loadUnavailablePeriods()),
     ...loadTimetable().filter((item) => item.weekday === weekday),
     ...periods,
   ].map((period) => ({ start: toMinutes(period.startTime), end: toMinutes(period.endTime) }))

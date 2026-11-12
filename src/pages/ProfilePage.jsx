@@ -4,8 +4,7 @@ import { logout } from '../api/auth.js'
 import FitNavigation from '../components/FitNavigation.jsx'
 import { loadInbody } from '../inbody.js'
 import { loadTimetable } from '../timetable.js'
-import { formatKoreanTime } from '../workoutPlan.js'
-import { crossesMidnight, getUnavailablePeriod } from '../workoutAvailability.js'
+import { getUnavailablePeriod, getUnavailablePeriods } from '../workoutAvailability.js'
 import './ProfilePage.css'
 
 const goalLabels = {
@@ -51,11 +50,13 @@ function loadProfile() {
   }
 }
 
-function unavailableLabel(value) {
-  const period = getUnavailablePeriod(value)
-  if (!period) return '없음'
+// 예: '취침 23:00~07:00, 점심 12:00~13:00' / 3개 이상이면 '취침, 점심 외 1개'
+function unavailableLabel(profile) {
+  const periods = getUnavailablePeriods(profile.unavailablePeriods, getUnavailablePeriod(profile.unavailablePeriod))
+  if (!periods.length) return '없음'
+  if (periods.length <= 2) return periods.map((period) => `${period.label} ${period.startTime}~${period.endTime}`).join(', ')
 
-  return `매일 ${formatKoreanTime(period.startTime)} ~ ${crossesMidnight(period) ? '다음 날 ' : ''}${formatKoreanTime(period.endTime)}`
+  return `${periods.slice(0, 2).map((period) => period.label).join(', ')} 외 ${periods.length - 2}개`
 }
 
 function RowLink({ to, title, detail }) {
@@ -148,7 +149,7 @@ export default function ProfilePage() {
 
       <section className="fit-profile__group" aria-labelledby="profile-schedule">
         <h2 id="profile-schedule">일정 및 연결</h2>
-        <RowLink to="/signup?edit=time" title="운동하기 어려운 시간" detail={unavailableLabel(profile.unavailablePeriod)} />
+        <RowLink to="/signup?edit=time" title="운동하기 어려운 시간" detail={unavailableLabel(profile)} />
         <RowLink
           to="/setup/timetable?from=profile"
           title="주간 시간표"

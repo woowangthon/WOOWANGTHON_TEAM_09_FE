@@ -1,14 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
 import { bodyInfo, saveInfo } from '../api/profile.js'
-import { saveUnavailablePeriod } from '../api/weeklyBlocks.js'
+import { saveUnavailablePeriods } from '../api/weeklyBlocks.js'
 import SetupProgress from '../components/SetupProgress.jsx'
 import { savePrefs } from '../userPrefs.js'
-import TimeScrubber from '../components/TimeScrubber.jsx'
-import { crossesMidnight, getUnavailablePeriod } from '../workoutAvailability.js'
+import UnavailablePicker from '../components/UnavailablePicker.jsx'
+import { getUnavailablePeriod, getUnavailablePeriods } from '../workoutAvailability.js'
 import './SignupPage.css'
-
-const defaultPeriod = { startTime: '22:00', endTime: '07:00' }
 
 const goals = ['muscle', 'fat', 'fitness', 'unsure', 'general']
 const experiences = ['beginner', 'intermediate', 'advanced']
@@ -20,7 +18,7 @@ const initialProfile = {
   goal: '',
   experience: '',
   environment: '',
-  unavailablePeriod: null,
+  unavailablePeriods: [],
   height: '',
   weight: '',
   age: '',
@@ -38,7 +36,7 @@ function loadProfile() {
       goal: goals.includes(profile.goal) ? profile.goal : '',
       experience: experiences.includes(profile.experience) ? profile.experience : '',
       environment: environments.includes(profile.environment) ? profile.environment : '',
-      unavailablePeriod: getUnavailablePeriod(profile.unavailablePeriod),
+      unavailablePeriods: getUnavailablePeriods(profile.unavailablePeriods, getUnavailablePeriod(profile.unavailablePeriod)),
       height: Number.isFinite(profile.height) ? String(profile.height) : '',
       weight: Number.isFinite(profile.weight) ? String(profile.weight) : '',
       age: Number.isInteger(profile.age) ? String(profile.age) : '',
@@ -49,7 +47,7 @@ function loadProfile() {
   }
 }
 
-// step: 0 시작 · 1 이름 · 2~4 선택 질문 · 5 어려운 시간 여부 · 6 시간대 선택 · 7 신체 정보
+// step: 0 시작 · 1 이름 · 2~4 선택 질문 · 5 어려운 시간대(여러 개) · 7 신체 정보
 const choiceSteps = {
   2: {
     name: 'goal',
@@ -81,7 +79,7 @@ const choiceSteps = {
   },
 }
 
-const progressByStep = { 1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 5, 7: 6 }
+const progressByStep = { 1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 7: 6 }
 
 const bodyFields = [
   { name: 'height', label: '신장', unit: 'cm', min: 51, max: 249 },
@@ -99,7 +97,6 @@ export default function SignupPage() {
   const [isEditing] = useState(() => Boolean(profile.goal))
   const [editStep] = useState(() => (profile.goal ? editSteps[searchParams.get('edit')] : undefined))
   const [step, setStep] = useState(() => editStep ?? (profile.goal ? 1 : 0))
-  const [period, setPeriod] = useState(() => profile.unavailablePeriod ?? defaultPeriod)
   const [message, setMessage] = useState('')
   const [isSaving, setIsSaving] = useState(false)
   const headingRef = useRef(null)
@@ -122,7 +119,7 @@ export default function SignupPage() {
       return
     }
 
-    goTo(step === 7 && !profile.unavailablePeriod ? 5 : step - 1)
+    goTo(step === 7 ? 5 : step - 1)
   }
 
   function persist(nextProfile) {
@@ -139,7 +136,7 @@ export default function SignupPage() {
         name: nextProfile.name.trim(),
         goal: nextProfile.goal,
         environment: nextProfile.environment,
-        unavailablePeriod: nextProfile.unavailablePeriod,
+        unavailablePeriods: nextProfile.unavailablePeriods,
       })
       return true
     } catch {
@@ -149,22 +146,22 @@ export default function SignupPage() {
   }
 
   // 시간대만 고치는 중이면 바로 저장하고 프로필로, 아니면 신체 정보 단계로
-  async function finishPeriod(unavailablePeriod) {
+  async function finishPeriods(unavailablePeriods) {
     if (editStep === 5) {
       setIsSaving(true)
       try {
-        await saveUnavailablePeriod(unavailablePeriod)
+        await saveUnavailablePeriods(unavailablePeriods)
       } catch (error) {
         setMessage(error.message)
         setIsSaving(false)
         return
       }
-      if (persist({ ...profile, unavailablePeriod })) navigate('/profile')
+      if (persist({ ...profile, unavailablePeriods })) navigate('/profile')
       setIsSaving(false)
       return
     }
 
-    update('unavailablePeriod', unavailablePeriod)
+    update('unavailablePeriods', unavailablePeriods)
     goTo(7)
   }
 
@@ -189,21 +186,6 @@ export default function SignupPage() {
     goTo(2)
   }
 
-  function confirmPeriod() {
-    const saved = getUnavailablePeriod(period)
-
-    if (!saved) {
-      setMessage('시작과 종료 시간을 다르게 선택해 주세요.')
-      return
-    }
-
-    finishPeriod(saved)
-  }
-
-  function skipPeriod() {
-    finishPeriod(null)
-  }
-
   // 서버에 먼저 저장하고, 성공하면 이 기기에도 저장해요.
   async function saveProfile(event) {
     event.preventDefault()
@@ -211,7 +193,7 @@ export default function SignupPage() {
 
     try {
       await saveInfo(bodyInfo(profile))
-      if (!editStep) await saveUnavailablePeriod(profile.unavailablePeriod)
+      if (!editStep) await saveUnavailablePeriods(profile.unavailablePeriods)
     } catch (error) {
       setMessage(error.message)
       setIsSaving(false)
@@ -288,35 +270,13 @@ export default function SignupPage() {
       )}
 
       {step === 5 && (
-        <div className="fit-setup__screen">
-          {heading(['운동하기 어려운', '시간대가 있나요?'])}
-          <div className="fit-setup__options">
-            <button className="fit-setup__choice" type="button" aria-pressed={Boolean(profile.unavailablePeriod)} onClick={() => goTo(6)}>
-              네, 시간대를 선택할게요
-            </button>
-            <button className="fit-setup__choice" type="button" onClick={skipPeriod} disabled={isSaving}>없어요, 다음으로</button>
-            {backButton}
-          </div>
-        </div>
-      )}
-
-      {step === 6 && (
-        <div className="fit-setup__screen fit-setup__screen--top">
-          {heading(['시간대 선택하기'])}
-          <dl className="fit-setup__range-summary">
-            <div><dt>시작</dt><dd>{period.startTime} 부터</dd></div>
-            <div><dt>종료</dt><dd>{crossesMidnight(period) ? '다음 날 ' : ''}{period.endTime} 까지</dd></div>
-          </dl>
-          <p className="fit-setup__hint">매일 이 시간에는 운동 계획을 잡지 않아요.</p>
-          <div className="fit-setup__scrubbers">
-            <TimeScrubber label="시작" value={period.startTime} onChange={(startTime) => setPeriod((previous) => ({ ...previous, startTime }))} />
-            <TimeScrubber label="종료" value={period.endTime} onChange={(endTime) => setPeriod((previous) => ({ ...previous, endTime }))} />
-          </div>
-          <div className="fit-setup__options">
-            <button className="fit-setup__choice" type="button" onClick={confirmPeriod} disabled={isSaving}>선택 완료</button>
-            {backButton}
-          </div>
-        </div>
+        <UnavailablePicker
+          title={heading(['운동하기 어려운', '시간대를 골라주세요'])}
+          initial={profile.unavailablePeriods}
+          isSaving={isSaving}
+          onDone={finishPeriods}
+          footer={backButton}
+        />
       )}
 
       {step === 7 && (

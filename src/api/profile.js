@@ -1,5 +1,6 @@
 import { api } from './client.js'
-import { listBlocks, readUnavailablePeriod, refreshTimetable } from './weeklyBlocks.js'
+import { listBlocks, readUnavailablePeriods, refreshTimetable } from './weeklyBlocks.js'
+import { getUnavailablePeriod, getUnavailablePeriods } from '../workoutAvailability.js'
 import { loadPrefs, savePrefs } from '../userPrefs.js'
 
 // 운동 경험: 앱 선택지 ↔ 서버 자유 입력 문장
@@ -41,14 +42,19 @@ export async function hydrateFromServer() {
   const [me, blocks] = await Promise.all([api('/user'), listBlocks()])
   const info = me?.info
   const prefs = loadPrefs(me.name)
-  const unavailablePeriod = prefs.unavailablePeriod !== undefined ? prefs.unavailablePeriod : readUnavailablePeriod(blocks)
+  // 이 기기에 보관한 값 → (예전 형식 하나짜리) → 서버 반복 일정 이름 순으로 찾아요.
+  const unavailablePeriods = Array.isArray(prefs.unavailablePeriods)
+    ? getUnavailablePeriods(prefs.unavailablePeriods)
+    : prefs.unavailablePeriod
+      ? getUnavailablePeriods(null, getUnavailablePeriod(prefs.unavailablePeriod))
+      : readUnavailablePeriods(blocks)
 
   if (info) {
     localStorage.setItem('demo-profile', JSON.stringify({
       name: prefs.name ?? me.name,
       goal: prefs.goal ?? 'general',
       environment: prefs.environment ?? 'gym',
-      unavailablePeriod,
+      unavailablePeriods,
       age: info.age,
       height: info.height,
       weight: info.weight,
@@ -65,7 +71,7 @@ export async function hydrateFromServer() {
     }
   }
 
-  savePrefs({ unavailablePeriod }, me.name)
+  savePrefs({ unavailablePeriods }, me.name)
   await refreshTimetable(blocks)
   return me
 }
