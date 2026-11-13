@@ -200,7 +200,8 @@ export default function SignupPage() {
       return
     }
 
-    if (persist(profile)) navigate(editStep ? '/profile' : '/setup/inbody')
+    // 프로필 수정이면 저장하고 프로필로 돌아가요. (인바디·시간표·캘린더·AI 계획 생성으로 이어지지 않게)
+    if (persist(profile)) navigate(editStep || isEditing ? '/profile' : '/setup/inbody')
     setIsSaving(false)
   }
 
@@ -315,7 +316,7 @@ export default function SignupPage() {
           </div>
           <p className="fit-setup__privacy">입력한 정보는 운동 계획 추천에만 사용돼요.</p>
           <div className="fit-setup__options">
-            <button className="fit-setup__choice" type="submit" disabled={isSaving}>{isSaving ? '저장하는 중...' : '완료'}</button>
+            <button className="fit-setup__choice" type="submit" disabled={isSaving}>{isSaving ? '저장하는 중...' : isEditing ? '저장' : '완료'}</button>
             {backButton}
           </div>
         </form>
