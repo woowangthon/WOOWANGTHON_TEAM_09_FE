@@ -207,3 +207,9 @@
   outline: 2px solid var(--profile-mint);
   outline-offset: 2px;
 }
+
+.fit-profile__loading {
+  margin: 30vh 0 0;
+  color: #a9a9a6;
+  text-align: center;
+}

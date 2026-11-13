@@ -1,4 +1,5 @@
 import { api } from './client.js'
+import { goalText } from './plan.js'
 import { listBlocks, readUnavailablePeriods, refreshTimetable } from './weeklyBlocks.js'
 import { getUnavailablePeriod, getUnavailablePeriods } from '../workoutAvailability.js'
 import { loadPrefs, savePrefs, setCurrentUser } from '../userPrefs.js'
@@ -15,6 +16,18 @@ function experienceKey(text) {
   return Object.keys(experienceText).find((key) => experienceText[key] === text) ?? 'beginner'
 }
 
+// 운동 목표: 앱 선택지 ↔ 서버에 저장하는 문장 (AI 계획이 이 문장을 읽어요)
+function goalKey(text) {
+  if (!text) return null
+  return Object.keys(goalText).find((key) => key !== 'unsure' && goalText[key] === text) ?? 'general'
+}
+
+function environmentKey(usesGym) {
+  if (usesGym === true) return 'gym'
+  if (usesGym === false) return 'none'
+  return null
+}
+
 // 보낸 필드만 서버에 저장돼요. (처음 등록할 때는 age·height·weight·sex 필수)
 export function saveInfo(fields) {
   return api('/info', { method: 'POST', body: fields })
@@ -27,6 +40,9 @@ export function bodyInfo(profile) {
     weight: Math.round(Number(profile.weight)),
     sex: profile.gender === 'male',
     experience: experienceText[profile.experience] ?? null,
+    nickname: profile.name?.trim() || null,
+    goal: goalText[profile.goal] ?? null,
+    uses_gym: profile.environment ? profile.environment !== 'none' : null,
   }
 }
 
@@ -45,7 +61,8 @@ export function readInbodyImage(file) {
   return api('/inbody/image', { method: 'POST', body: form, auth: false })
 }
 
-// 로그인 직후: 서버 정보를 이 기기 캐시(프로필·인바디·시간표)에 채워요. 서버에 없는 이름·목표 등은 기존 값을 유지해요.
+// 서버(DB) 정보로 이 기기 캐시(프로필·인바디·시간표)를 새로 채워요.
+// 이름·목표·헬스장 여부도 서버 값이 우선이고, 서버에 아직 없을 때만 이 기기에 보관한 값을 써요.
 export async function hydrateFromServer() {
   const [me, blocks] = await Promise.all([api('/user'), listBlocks()])
   const info = me?.info
@@ -60,9 +77,9 @@ export async function hydrateFromServer() {
 
   if (info) {
     localStorage.setItem('demo-profile', JSON.stringify({
-      name: prefs.name ?? me.name,
-      goal: prefs.goal ?? 'general',
-      environment: prefs.environment ?? 'gym',
+      name: info.nickname || prefs.name || me.name,
+      goal: goalKey(info.goal) ?? prefs.goal ?? 'general',
+      environment: environmentKey(info.uses_gym) ?? prefs.environment ?? 'gym',
       unavailablePeriods,
       age: info.age,
       height: info.height,
@@ -77,7 +94,13 @@ export async function hydrateFromServer() {
         muscleMass: info.skeletal_muscle_kg,
         measuredAt: info.inbody_measured_at.slice(0, 10),
       }))
+    } else {
+      localStorage.removeItem('demo-inbody')
     }
+  } else {
+    // 서버에 건강 정보가 없으면 이 기기의 예전 사본도 지워서 '프로필 만들기'가 보이게 해요.
+    localStorage.removeItem('demo-profile')
+    localStorage.removeItem('demo-inbody')
   }
 
   saveCampus({ department: me.department, college: me.college })

@@ -20,19 +20,31 @@ import GroupPage from './pages/GroupPage'
 import GroupDetailPage from './pages/GroupDetailPage'
 import GroupCreatePage from './pages/GroupCreatePage'
 
-// 이 기기에 프로필 사본이 없으면 (다른 주소·기기에서 로그인했거나 사본이 지워진 경우) 서버에서 한 번 받아와요.
+// 앱을 열 때마다 한 번 서버(DB)에서 내 정보를 새로 받아 이 기기 사본을 맞춰요.
+// 사본이 없으면 (다른 주소·기기, 지워진 경우) 받아올 때까지 기다리고, 있으면 화면을 먼저 보여줘요.
 let restored = false
-const needsRestore = () => {
+const hasProfileCopy = () => {
   try {
-    return !restored && Boolean(getToken()) && localStorage.getItem('demo-profile') === null
+    return localStorage.getItem('demo-profile') !== null
   } catch {
-    return false
+    return true
   }
+}
+const needsRestore = () => !restored && Boolean(getToken()) && !hasProfileCopy()
+
+function refreshInBackground() {
+  if (restored || !getToken()) return
+  restored = true
+  hydrateFromServer().catch(() => {})
 }
 
 // 로그인하지 않았으면 로그인 화면으로 보내요.
 function RequireAuth() {
   const [isRestoring, setIsRestoring] = useState(needsRestore)
+
+  useEffect(() => {
+    if (!isRestoring) refreshInBackground()
+  }, [isRestoring])
 
   useEffect(() => {
     if (!isRestoring || restored) return

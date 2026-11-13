@@ -1,6 +1,7 @@
-import { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { logout } from '../api/auth.js'
+import { hydrateFromServer } from '../api/profile.js'
+import { useAsync } from '../hooks/useAsync.js'
 import { loadCampus } from '../campus.js'
 import FitNavigation from '../components/FitNavigation.jsx'
 import { loadInbody } from '../inbody.js'
@@ -90,10 +91,21 @@ function LogoutButton() {
 }
 
 export default function ProfilePage() {
-  const [profile] = useState(loadProfile)
-  const [inbody] = useState(loadInbody)
-  const [timetableCount] = useState(() => loadTimetable().length)
-  const [campus] = useState(loadCampus)
+  // 서버(DB) 값으로 사본을 새로 맞춘 뒤 다시 읽어요. 받아오는 동안은 기존 사본을 보여줘요.
+  const { data: me, loading } = useAsync(hydrateFromServer, [])
+  const profile = loadProfile()
+  const inbody = loadInbody()
+  const timetableCount = loadTimetable().length
+  const campus = loadCampus()
+
+  if (!profile && loading && !me) {
+    return (
+      <div className="fit-profile">
+        <p className="fit-profile__loading" role="status">내 정보를 불러오는 중이에요...</p>
+        <FitNavigation />
+      </div>
+    )
+  }
 
   if (!profile) {
     return (
