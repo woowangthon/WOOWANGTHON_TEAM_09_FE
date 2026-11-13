@@ -386,3 +386,50 @@
   outline: 2px solid var(--calendar-mint);
   outline-offset: 2px;
 }
+
+/* 생활 일정이 운동과 겹칠 때: 운동 옮기기 제안 */
+.fit-calendar__conflict {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+  padding: 14px;
+  border: 1px solid var(--calendar-mint);
+  border-radius: 12px;
+  background: #1a2a26;
+}
+
+.fit-calendar__conflict p {
+  margin: 0;
+  color: #e4e4e1;
+  font-size: 12px;
+}
+
+.fit-calendar__conflict strong {
+  color: #fafafa;
+  font-size: 13px;
+}
+
+.fit-calendar__conflict div {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.fit-calendar__conflict button {
+  min-height: 38px;
+  border: 1px solid #6a6a68;
+  border-radius: 999px;
+  background: transparent;
+  color: #fafafa;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.fit-calendar__conflict button:last-child {
+  border-color: transparent;
+  background: var(--calendar-pink);
+  color: var(--calendar-berry);
+}

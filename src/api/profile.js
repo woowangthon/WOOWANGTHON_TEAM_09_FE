@@ -1,7 +1,7 @@
 import { api } from './client.js'
 import { listBlocks, readUnavailablePeriods, refreshTimetable } from './weeklyBlocks.js'
 import { getUnavailablePeriod, getUnavailablePeriods } from '../workoutAvailability.js'
-import { loadPrefs, savePrefs } from '../userPrefs.js'
+import { loadPrefs, savePrefs, setCurrentUser } from '../userPrefs.js'
 import { saveCampus } from '../campus.js'
 
 // 운동 경험: 앱 선택지 ↔ 서버 자유 입력 문장
@@ -49,6 +49,7 @@ export function readInbodyImage(file) {
 export async function hydrateFromServer() {
   const [me, blocks] = await Promise.all([api('/user'), listBlocks()])
   const info = me?.info
+  setCurrentUser(me.name)
   const prefs = loadPrefs(me.name)
   // 이 기기에 보관한 값 → (예전 형식 하나짜리) → 서버 반복 일정 이름 순으로 찾아요.
   const unavailablePeriods = Array.isArray(prefs.unavailablePeriods)

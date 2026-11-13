@@ -29,9 +29,14 @@
   align-self: flex-start;
   min-height: 32px;
   padding: 4px 0;
+  border: 0;
+  background: none;
   color: var(--plan-muted);
+  font: inherit;
   font-size: 12px;
+  text-align: left;
   text-decoration: none;
+  cursor: pointer;
 }
 
 .fit-plan__header {

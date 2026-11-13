@@ -5,17 +5,35 @@ import SetupProgress from '../components/SetupProgress.jsx'
 import UploadPanel from '../components/UploadPanel.jsx'
 import { useImageFile } from '../hooks/useImageFile.js'
 import { loadInbody, saveInbody, todayText } from '../inbody.js'
+import { readStorage } from '../workoutPlan.js'
 import './SignupPage.css'
 import './UploadSetup.css'
 
-const missingLabels = { body_fat_percent: '체지방률', skeletal_muscle_kg: '골격근량', inbody_measured_at: '측정일' }
+const missingLabels = { height: '키', weight: '몸무게', body_fat_percent: '체지방률', skeletal_muscle_kg: '골격근량', inbody_measured_at: '측정일' }
+
+// 인바디 입력 칸: 결과지의 키·몸무게도 함께 받아 프로필 신체 정보를 갱신해요.
+function loadForm() {
+  const profile = readStorage('demo-profile', null)
+  return {
+    ...loadInbody(),
+    height: Number.isFinite(profile?.height) ? String(profile.height) : '',
+    weight: Number.isFinite(profile?.weight) ? String(profile.weight) : '',
+  }
+}
+
+// 이 기기 프로필의 키·몸무게도 바로 바꿔서 프로필 화면에 반영돼요.
+function updateProfileBody(height, weight) {
+  const profile = readStorage('demo-profile', null)
+  if (!profile) return
+  localStorage.setItem('demo-profile', JSON.stringify({ ...profile, height, weight }))
+}
 
 export default function InbodySetupPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const fromProfile = searchParams.get('from') === 'profile'
   const nextPath = fromProfile ? '/profile' : '/setup/timetable'
-  const [form, setForm] = useState(loadInbody)
+  const [form, setForm] = useState(loadForm)
   const [isFormOpen, setIsFormOpen] = useState(() => fromProfile && Boolean(form.measuredAt))
   const [message, setMessage] = useState('')
   const [isSaving, setIsSaving] = useState(false)
@@ -43,6 +61,8 @@ export default function InbodySetupPage() {
       if (id !== readId.current) return
 
       setForm((previous) => ({
+        height: result.height ?? previous.height,
+        weight: result.weight ?? previous.weight,
         bodyFat: result.body_fat_percent ?? previous.bodyFat,
         muscleMass: result.skeletal_muscle_kg ?? previous.muscleMass,
         measuredAt: result.inbody_measured_at ?? previous.measuredAt,
@@ -80,9 +100,14 @@ export default function InbodySetupPage() {
     event.preventDefault()
     setIsSaving(true)
 
+    // 키·몸무게는 정수로 저장해요. (서버 /info 형식, BMI 계산에도 쓰여요)
+    const height = Math.round(Number(form.height))
+    const weight = Math.round(Number(form.weight))
+
     try {
-      await saveInfo(inbodyInfo(form))
+      await saveInfo({ ...inbodyInfo(form), height, weight })
       saveInbody(form)
+      updateProfileBody(height, weight)
     } catch (error) {
       setMessage(error.message ?? '저장하지 못했어요. 다시 시도해 주세요.')
       setIsSaving(false)
@@ -129,9 +154,19 @@ export default function InbodySetupPage() {
 
         {isFormOpen && (
           <form className="fit-setup__fields fit-setup__panel" onSubmit={submit}>
+            <div className="fit-setup__pair">
+              <label>
+                키 (cm)
+                <input ref={firstFieldRef} type="number" inputMode="numeric" name="height" value={form.height} onChange={handleChange} min="51" max="249" step="1" required />
+              </label>
+              <label>
+                몸무게 (kg)
+                <input type="number" inputMode="numeric" name="weight" value={form.weight} onChange={handleChange} min="11" max="299" step="1" required />
+              </label>
+            </div>
             <label>
               체지방률 (%)
-              <input ref={firstFieldRef} type="number" inputMode="decimal" name="bodyFat" value={form.bodyFat} onChange={handleChange} min="0.1" max="79.9" step="0.1" required />
+              <input type="number" inputMode="decimal" name="bodyFat" value={form.bodyFat} onChange={handleChange} min="0.1" max="79.9" step="0.1" required />
             </label>
             <label>
               골격근량 (kg)

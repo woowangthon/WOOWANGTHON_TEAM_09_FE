@@ -1,4 +1,4 @@
-import { Link, useParams } from 'react-router'
+import { useLocation, useNavigate, useParams } from 'react-router'
 import { loadSession } from '../api/plan.js'
 import ExerciseIcon from '../components/ExerciseIcon.jsx'
 import { useAsync } from '../hooks/useAsync.js'
@@ -15,10 +15,18 @@ export default function PlanDetailPage() {
   const { sessionId } = useParams()
   const { data: session, error, loading } = useAsync(() => loadSession(sessionId), [sessionId])
   const level = levelLabels[readStorage('demo-profile', null)?.experience] ?? '맞춤 루틴'
+  const navigate = useNavigate()
+  const location = useLocation()
+
+  // 들어온 화면(홈·캘린더·계획·리포트)으로 돌아가요. 주소로 바로 들어와 이전 화면이 없으면 이번 주 계획으로 가요.
+  function goBack() {
+    if (location.key !== 'default') navigate(-1)
+    else navigate('/plan', { replace: true })
+  }
 
   return (
     <div className="fit-plan">
-      <Link className="fit-plan__back" to="/plan">‹ 이번 주 운동 계획</Link>
+      <button className="fit-plan__back" type="button" onClick={goBack}>‹ 뒤로</button>
 
       {loading && <p className="fit-plan__state" role="status">운동을 불러오는 중이에요...</p>}
       {error && <p className="fit-plan__state" role="alert">{error.status === 404 ? '운동을 찾을 수 없어요.' : error.message}</p>}
@@ -45,7 +53,7 @@ export default function PlanDetailPage() {
       )}
 
       <div className="fit-plan__actions">
-        <Link className="fit-plan__button" to="/plan">이전으로</Link>
+        <button className="fit-plan__button" type="button" onClick={goBack}>이전으로</button>
       </div>
     </div>
   )

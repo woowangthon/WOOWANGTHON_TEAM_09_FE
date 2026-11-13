@@ -27,6 +27,11 @@ function exerciseDetail(exercise) {
 }
 
 // 서버 운동 일정(+종목) → 화면용 운동 객체
+// AI가 붙이는 '운동: ' 접두어는 빼고 보여줘요. 예: '운동: 하체 (저강도)' → '하체 (저강도)'
+export function workoutTitle(name) {
+  return name?.replace(/^운동\s*[:：]\s*/, '').trim() || '운동'
+}
+
 export function toSession(schedule, todayKey = dateKey(new Date())) {
   const date = schedule.start_term.slice(0, 10)
   const exercises = (schedule.exercises ?? [])
@@ -50,8 +55,7 @@ export function toSession(schedule, todayKey = dateKey(new Date())) {
   return {
     id: schedule.id,
     name: schedule.name,
-    // AI가 붙이는 '운동: ' 접두어는 빼고 보여줘요. 예: '운동: 하체 (저강도)' → '하체 (저강도)'
-    title: schedule.name?.replace(/^운동\s*[:：]\s*/, '').trim() || '운동',
+    title: workoutTitle(schedule.name),
     date,
     day: `${weekdays[parseDateKey(date).getDay()]}요일`,
     time: timeOf(schedule.start_term),
