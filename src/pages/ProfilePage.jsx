@@ -177,7 +177,7 @@ export default function ProfilePage() {
         <RowLink to="/signup?edit=time" title="운동하기 어려운 시간" detail={unavailableLabel(profile)} />
         <RowLink
           to="/setup/timetable?from=profile"
-          title="주간 시간표"
+          title="수업 시간표"
           detail={timetableCount ? `등록한 수업 ${timetableCount}개` : '수업 시간 등록하기'}
         />
         <RowLink to="/setup/calendar?from=profile" title="Google 캘린더" detail="연결 안 됨" />

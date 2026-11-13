@@ -101,7 +101,7 @@ export default function TimetablePage() {
     <div className="fit-setup">
       {fromProfile ? (
         <div className="fit-setup__top">
-          <span>주간 시간표 관리</span>
+          <span>수업 시간표 관리</span>
           <Link to="/profile">닫기</Link>
         </div>
       ) : (
@@ -109,7 +109,7 @@ export default function TimetablePage() {
       )}
 
       <div className="fit-setup__screen fit-setup__screen--top">
-        <h1>주간 시간표를<br />업로드 해주세요</h1>
+        <h1>수업 시간표를<br />업로드 해주세요</h1>
 
         <UploadPanel
           imageAlt="선택한 시간표 사진"
