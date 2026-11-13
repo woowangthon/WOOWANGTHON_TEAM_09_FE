@@ -168,9 +168,11 @@ export default function HomePage() {
         </div>
       )}
 
-      {sessions.length > 0 && (
-        <Link className="fit-home__plan-link" to="/plan">이번 주 계획 보기 ›</Link>
-      )}
+      {/* 리포트는 계획이 있든 없든 언제나 갈 수 있게 보여줘요. */}
+      <nav className="fit-home__links" aria-label="바로가기">
+        {sessions.length > 0 && <Link className="fit-home__plan-link" to="/plan">이번 주 계획 보기 ›</Link>}
+        <Link className="fit-home__plan-link" to="/report">이번 주 리포트 보기 ›</Link>
+      </nav>
 
       <FitNavigation />
     </div>
