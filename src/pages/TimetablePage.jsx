@@ -4,6 +4,7 @@ import SetupProgress from '../components/SetupProgress.jsx'
 import TimeSelect from '../components/TimeSelect.jsx'
 import UploadPanel from '../components/UploadPanel.jsx'
 import { useImageFile } from '../hooks/useImageFile.js'
+import { moveWorkoutsOutOfBlocksSafely } from '../api/reschedule.js'
 import { addClass, deleteClass, refreshTimetable } from '../api/weeklyBlocks.js'
 import { getTimetableClass, loadTimetable } from '../timetable.js'
 import { weekdays } from '../workoutPlan.js'
@@ -59,6 +60,9 @@ export default function TimetablePage() {
     try {
       await action()
       setMessage(successMessage)
+      // 새 수업과 겹치는 운동이 있으면 빈 시간으로 옮겨요.
+      const moved = await moveWorkoutsOutOfBlocksSafely()
+      if (moved) setMessage(`${successMessage} ${moved}`)
       return true
     } catch (error) {
       setMessage(error.status === 409 ? '같은 요일에 시간이 겹치는 수업이 있어요.' : error.message)

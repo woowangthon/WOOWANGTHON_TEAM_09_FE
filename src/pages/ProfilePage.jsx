@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router'
+import { Link, useLocation, useNavigate } from 'react-router'
 import { logout } from '../api/auth.js'
 import { hydrateFromServer } from '../api/profile.js'
 import { useAsync } from '../hooks/useAsync.js'
@@ -93,6 +93,8 @@ function LogoutButton() {
 export default function ProfilePage() {
   // 서버(DB) 값으로 사본을 새로 맞춘 뒤 다시 읽어요. 받아오는 동안은 기존 사본을 보여줘요.
   const { data: me, loading } = useAsync(hydrateFromServer, [])
+  // 시간대·프로필 수정 뒤 겹치던 운동을 옮겼으면 그 안내를 보여줘요.
+  const notice = useLocation().state?.notice
   const profile = loadProfile()
   const inbody = loadInbody()
   const timetableCount = loadTimetable().length
@@ -136,6 +138,7 @@ export default function ProfilePage() {
         </div>
         <Link className="fit-profile__edit" to="/signup" aria-label="운동 프로필 전체 수정">수정</Link>
       </section>
+      {notice && <p className="fit-profile__notice" role="status">{notice}</p>}
 
       <section className="fit-profile__group" aria-labelledby="profile-workout">
         <h2 id="profile-workout">운동 정보</h2>

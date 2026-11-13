@@ -6,17 +6,22 @@ import './UnavailablePicker.css'
 const emptyDraft = { id: '', label: '', startTime: '', endTime: '', weekdays: ALL_DAYS }
 const dayChips = [['1', '월'], ['2', '화'], ['3', '수'], ['4', '목'], ['5', '금'], ['6', '토'], ['0', '일']]
 
+// 매일이면 요일을 생략하고, 요일을 고른 시간대만 '월·수 22:00 ~ …'처럼 앞에 붙여요.
 function timeText(period) {
-  return `${daysText(period.weekdays)} ${period.startTime} ~ ${crossesMidnight(period) ? '다음 날 ' : ''}${period.endTime}`
+  const days = period.weekdays ? `${daysText(period.weekdays)} ` : ''
+  return `${days}${period.startTime} ~ ${crossesMidnight(period) ? '다음 날 ' : ''}${period.endTime}`
 }
 
-// 운동하기 어려운 시간대를 여러 개 고르는 화면. 자주 쓰는 시간대는 눌러서 켜고 끄고, 직접 추가·수정도 할 수 있어요.
+// 운동하기 어려운 시간대를 여러 개 고르는 화면.
+// 자주 쓰는 시간대 카드는 눌러서 켜고 끄고, 직접 추가한 시간대도 카드로 함께 보여요. (누르면 수정·삭제)
 export default function UnavailablePicker({ title, initial, isSaving, onDone, footer }) {
   const [periods, setPeriods] = useState(initial)
   const [draft, setDraft] = useState(null)
   const [message, setMessage] = useState('')
 
   const isSelected = (id) => periods.some((period) => period.id === id)
+  const presetIds = presetPeriods.map((preset) => preset.id)
+  const customPeriods = periods.filter((period) => !presetIds.includes(period.id))
 
   function togglePreset(preset) {
     setMessage('')
@@ -74,50 +79,39 @@ export default function UnavailablePicker({ title, initial, isSaving, onDone, fo
       <p className="fit-setup__hint">이 시간에는 운동 계획을 잡지 않아요. 여러 개 선택할 수 있어요.</p>
 
       <section className="fit-avail__section" aria-labelledby="avail-presets">
-        <h2 id="avail-presets">자주 사용하는 시간대</h2>
+        <h2 id="avail-presets" className="fit-avail__sr-only">자주 사용하는 시간대</h2>
         <div className="fit-avail__presets">
-          {presetPeriods.map((preset) => (
+          {presetPeriods.map((preset) => {
+            const chosen = periods.find((period) => period.id === preset.id)
+            return (
+              <button
+                key={preset.id}
+                type="button"
+                className="fit-avail__preset"
+                aria-pressed={Boolean(chosen)}
+                onClick={() => togglePreset(preset)}
+              >
+                <strong>{preset.label}</strong>
+                <small>{chosen ? timeText(chosen) : `${preset.startTime} ~ ${preset.endTime}`}</small>
+                <span className="fit-avail__check" aria-hidden="true" />
+              </button>
+            )
+          })}
+          {customPeriods.map((period) => (
             <button
-              key={preset.id}
+              key={period.id}
               type="button"
               className="fit-avail__preset"
-              aria-pressed={isSelected(preset.id)}
-              onClick={() => togglePreset(preset)}
+              aria-pressed="true"
+              aria-label={`${period.label} ${timeText(period)} 수정`}
+              onClick={() => { setMessage(''); setDraft({ ...period, weekdays: period.weekdays ?? ALL_DAYS }) }}
             >
-              <strong>{preset.label}</strong>
-              <small>{preset.startTime} ~ {preset.endTime}</small>
+              <strong>{period.label}</strong>
+              <small>{timeText(period)}</small>
               <span className="fit-avail__check" aria-hidden="true" />
             </button>
           ))}
         </div>
-      </section>
-
-      <section className="fit-avail__section" aria-labelledby="avail-selected">
-        <div className="fit-avail__heading">
-          <h2 id="avail-selected">선택한 시간대</h2>
-          {periods.length > 0 && <span>{periods.length}개 선택</span>}
-        </div>
-
-        {periods.length ? (
-          <ul className="fit-avail__list">
-            {periods.map((period) => (
-              <li key={period.id}>
-                <span>
-                  <strong>{period.label}</strong>
-                  <small>{timeText(period)}</small>
-                </span>
-                <button type="button" className="fit-avail__edit" onClick={() => { setMessage(''); setDraft({ ...period, weekdays: period.weekdays ?? ALL_DAYS }) }}>
-                  수정
-                </button>
-                <button type="button" className="fit-avail__remove" onClick={() => remove(period.id)} aria-label={`${period.label} 삭제`}>
-                  ×
-                </button>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="fit-avail__empty">아직 선택한 시간대가 없어요.</p>
-        )}
 
         {draft ? (
           <div className="fit-avail__editor">
@@ -143,6 +137,7 @@ export default function UnavailablePicker({ title, initial, isSaving, onDone, fo
             <p className="fit-avail__note">종료가 시작보다 빠르면 다음 날 끝나는 걸로 계산해요.</p>
             <div className="fit-avail__editor-actions">
               <button type="button" onClick={() => { setDraft(null); setMessage('') }}>취소</button>
+              {draft.id && <button type="button" onClick={() => remove(draft.id)}>삭제</button>}
               <button type="button" onClick={applyDraft}>적용</button>
             </div>
           </div>

@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { loadPeriod, withExerciseChecked, workoutTitle } from '../api/plan.js'
+import { applyWorkoutMoves, describeMoves, planWorkoutMoves } from '../api/reschedule.js'
 import { conflictMessage, createSchedule, deleteSchedule, replaceSchedule } from '../api/schedule.js'
 import FitNavigation from '../components/FitNavigation.jsx'
 import MissedWorkoutCard from '../components/MissedWorkoutCard.jsx'
 import TimeSelect from '../components/TimeSelect.jsx'
 import WorkoutChecklist from '../components/WorkoutChecklist.jsx'
-import { getBusyPeriods, getFreeSlots, toMinutes, toTime } from '../freeTime.js'
+import { getBusyPeriods, getFreeSlots, toTime } from '../freeTime.js'
 import { useAsync } from '../hooks/useAsync.js'
 import { loadTimetable } from '../timetable.js'
 import { getUnavailableSegments, loadUnavailablePeriods } from '../workoutAvailability.js'
@@ -220,50 +221,20 @@ export default function SchedulePage() {
     reload()
   }
 
-  // 겹친 운동마다 그날의 빈 시간 중 원래 시간과 가장 가까운 곳을 찾아요. (새 일정·다른 일정·수업·어려운 시간을 피해서)
-  function planMoves({ event, workouts }) {
-    const moved = []
-    const movingIds = workouts.map((item) => item.id)
-
-    for (const workout of workouts) {
-      const key = workout.start_term.slice(0, 10)
-      const start = toMinutes(timeOf(workout.start_term))
-      const duration = toMinutes(timeOf(workout.end_term)) - start
-      const periods = [
-        ...life.filter((item) => item.start_term.startsWith(key)).map((item) => ({ startTime: timeOf(item.start_term), endTime: timeOf(item.end_term) })),
-        ...sessions.filter((item) => item.date === key && !movingIds.includes(item.id)).map((item) => ({ startTime: item.time, endTime: item.endTime })),
-        ...moved.filter((item) => item.key === key).map((item) => ({ startTime: toTime(item.slot), endTime: toTime(item.slot + item.duration) })),
-        ...(event.start_term.startsWith(key) ? [{ startTime: timeOf(event.start_term), endTime: timeOf(event.end_term) }] : []),
-      ]
-      const from = key === todayKey ? today.getHours() * 60 + today.getMinutes() + 30 : 0
-      const slots = getFreeSlots(getBusyPeriods(new Date(`${key}T00:00:00`), periods), duration, from)
-      if (!slots.length) return { error: `「${workoutTitle(workout.name)}」을 옮길 빈 시간이 그날 없어요. 일정 시간을 바꿔 주세요.` }
-
-      const slot = slots.reduce((best, item) => (Math.abs(item - start) < Math.abs(best - start) ? item : best))
-      moved.push({ workout, key, slot, duration })
-    }
-    return { moved }
-  }
-
+  // 겹친 운동은 서버(DB)의 일정·수업·운동하기 어려운 시간을 피해 빈 시간으로 옮기고, 그다음 새 일정을 추가해요.
   async function addAndMoveWorkouts() {
-    const plan = planMoves(pending)
-    if (plan.error) {
-      setPending(null)
-      setMessage(plan.error)
-      return
-    }
-
     setIsSaving(true)
     try {
-      for (const { workout, key, slot, duration } of plan.moved) {
-        await replaceSchedule(workout.id, { name: workout.name, start_term: `${key}T${toTime(slot)}`, end_term: `${key}T${toTime(slot + duration)}` })
+      const plan = await planWorkoutMoves(pending.workouts, [pending.event])
+      if (plan.error) {
+        setPending(null)
+        setMessage(plan.error)
+        return
       }
+      await applyWorkoutMoves(plan.moves)
       await createSchedule(pending.event)
-      const summary = plan.moved
-        .map(({ workout, slot }) => `「${workoutTitle(workout.name)}」 운동은 ${formatKoreanTime(toTime(slot))}로`)
-        .join(', ')
       setPending(null)
-      finishAdding(pending.event.start_term.slice(0, 10), `일정을 추가했어요. ${summary} 옮겼어요.`)
+      finishAdding(pending.event.start_term.slice(0, 10), `일정을 추가했어요. ${describeMoves(plan.moves)} 옮겼어요.`)
     } catch (caught) {
       setPending(null)
       setMessage(caught.status === 409 ? conflictMessage(caught) : caught.message)
@@ -411,7 +382,7 @@ export default function SchedulePage() {
                 {pending.workouts.map((item) => `「${workoutTitle(item.name)}」`).join(', ')} 운동과 시간이 겹쳐요.
               </strong>
             </p>
-            <p>일정은 추가하고, 운동은 그날 비어 있는 다른 시간으로 옮길까요?</p>
+            <p>일정은 추가하고, 운동은 비어 있는 다른 시간으로 옮길까요? (그날 빈 시간이 없으면 가까운 다른 날로 옮겨요)</p>
             <div>
               <button type="button" onClick={() => setPending(null)} disabled={isSaving}>취소</button>
               <button type="button" onClick={addAndMoveWorkouts} disabled={isSaving}>

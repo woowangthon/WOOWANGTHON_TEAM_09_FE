@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
 import { bodyInfo, saveInfo } from '../api/profile.js'
+import { moveWorkoutsOutOfBlocksSafely } from '../api/reschedule.js'
 import { saveUnavailablePeriods } from '../api/weeklyBlocks.js'
 import SetupProgress from '../components/SetupProgress.jsx'
 import { savePrefs } from '../userPrefs.js'
@@ -149,14 +150,16 @@ export default function SignupPage() {
   async function finishPeriods(unavailablePeriods) {
     if (editStep === 5) {
       setIsSaving(true)
+      let notice
       try {
         await saveUnavailablePeriods(unavailablePeriods)
+        notice = await moveWorkoutsOutOfBlocksSafely()
       } catch (error) {
         setMessage(error.message)
         setIsSaving(false)
         return
       }
-      if (persist({ ...profile, unavailablePeriods })) navigate('/profile')
+      if (persist({ ...profile, unavailablePeriods })) navigate('/profile', { state: { notice } })
       setIsSaving(false)
       return
     }
@@ -191,9 +194,12 @@ export default function SignupPage() {
     event.preventDefault()
     setIsSaving(true)
 
+    let notice
     try {
       await saveInfo(bodyInfo(profile))
       if (!editStep) await saveUnavailablePeriods(profile.unavailablePeriods)
+      // 프로필 수정으로 운동하기 어려운 시간이 바뀌었으면, 겹치는 운동을 옮겨요.
+      if (isEditing && !editStep) notice = await moveWorkoutsOutOfBlocksSafely()
     } catch (error) {
       setMessage(error.message)
       setIsSaving(false)
@@ -201,7 +207,7 @@ export default function SignupPage() {
     }
 
     // 프로필 수정이면 저장하고 프로필로 돌아가요. (인바디·시간표·캘린더·AI 계획 생성으로 이어지지 않게)
-    if (persist(profile)) navigate(editStep || isEditing ? '/profile' : '/setup/inbody')
+    if (persist(profile)) navigate(editStep || isEditing ? '/profile' : '/setup/inbody', { state: { notice } })
     setIsSaving(false)
   }
 

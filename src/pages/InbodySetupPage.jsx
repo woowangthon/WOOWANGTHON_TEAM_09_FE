@@ -82,7 +82,7 @@ export default function InbodySetupPage() {
   }
 
   let readingNote
-  if (reading?.status === 'reading') readingNote = '사진을 읽는 중이에요... 10초 정도 걸릴 수 있어요.'
+  if (reading?.status === 'reading') readingNote = '사진을 읽는 중이에요... 3~4분 정도 걸려요. 이 화면을 닫지 말고 기다려 주세요. 다 읽으면 아래 칸이 자동으로 채워져요.'
   else if (reading?.status === 'failed') readingNote = `사진을 읽지 못했어요. 직접 입력해 주세요. (${reading.message})`
   else if (reading?.status === 'done') {
     readingNote = reading.missing.length
