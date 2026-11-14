@@ -49,7 +49,7 @@ function loadProfile() {
   }
 }
 
-// step: 0 시작 · 1 이름 · 2~4 선택 질문 · 5 어려운 시간대(여러 개) · 7 신체 정보
+// step: 1 이름 · 2~4 선택 질문 · 5 어려운 시간대(여러 개) · 7 신체 정보
 const choiceSteps = {
   2: {
     name: 'goal',
@@ -98,7 +98,7 @@ export default function SignupPage() {
   // 이미 프로필이 있으면 수정 중이에요. 첫 화면에서 뒤로 가면 시작 화면이 아니라 프로필로 돌아가요.
   const [isEditing] = useState(() => Boolean(profile.goal))
   const [editStep] = useState(() => (profile.goal ? editSteps[searchParams.get('edit')] : undefined))
-  const [step, setStep] = useState(() => editStep ?? (profile.goal ? 1 : 0))
+  const [step, setStep] = useState(() => editStep ?? 1)
   const [message, setMessage] = useState('')
   const [isSaving, setIsSaving] = useState(false)
   const headingRef = useRef(null)
@@ -227,23 +227,7 @@ export default function SignupPage() {
   return (
     <div className="fit-setup">
       <BrandMark />
-      {step > 0 && !editStep && <SetupProgress step={progressByStep[step]} />}
-
-      {step === 0 && (
-        <div className="fit-setup__screen fit-setup__screen--welcome">
-          <h1 ref={headingRef} tabIndex={-1} className="fit-welcome__title">
-            <span>바쁜 하루에도</span>
-            <span>운동은 <em>꾸준하게<svg className="fit-welcome__spark" viewBox="0 0 14 16" aria-hidden="true"><path d="M3 1 5 10M10 3 9 12" /></svg></em></span>
-          </h1>
-          <div className="fit-welcome__hero">
-            {/* 캐릭터 이미지: public/brand/mascot.png (없으면 빈자리로 둬요) */}
-            <img src="/brand/mascot.png" alt="" onError={(event) => { event.currentTarget.hidden = true }} />
-          </div>
-          <div className="fit-setup__options">
-            <button className="fit-setup__choice" type="button" onClick={() => goTo(1)}>우왕코치 시작하기 →</button>
-          </div>
-        </div>
-      )}
+      {!editStep && <SetupProgress step={progressByStep[step]} />}
 
       {step === 1 && (
         <form className="fit-setup__screen" onSubmit={submitName}>

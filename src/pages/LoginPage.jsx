@@ -7,9 +7,12 @@ import { departments, findCollege } from '../campus.js'
 import './SignupPage.css'
 import './LoginPage.css'
 import BrandMark from '../components/BrandMark.jsx'
+import WelcomeScreen from '../components/WelcomeScreen.jsx'
 
 export default function LoginPage() {
   const navigate = useNavigate()
+  // 처음엔 캐릭터 시작 화면, 「우왕코치 시작하기」를 누르면 로그인 창
+  const [showWelcome, setShowWelcome] = useState(true)
   const [mode, setMode] = useState('login')
   const [form, setForm] = useState({ name: '', password: '', confirm: '', department: '' })
   const [message, setMessage] = useState('')
@@ -66,6 +69,15 @@ export default function LoginPage() {
       setMessage(error.message)
       setIsSubmitting(false)
     }
+  }
+
+  if (showWelcome) {
+    return (
+      <div className="fit-setup">
+        <BrandMark />
+        <WelcomeScreen onStart={() => setShowWelcome(false)} />
+      </div>
+    )
   }
 
   return (
