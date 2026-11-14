@@ -90,9 +90,15 @@
 
 /* 시작 화면: 왼쪽 정렬 큰 제목 + '꾸준하게' 밑줄 */
 .fit-setup .fit-welcome__title {
-  text-align: left;
+  text-align: center;
   font-size: clamp(30px, 9vw, 36px);
   line-height: 1.35;
+}
+
+/* 스르륵 나타나는 애니메이션이 줄 영역 밖을 가리지 않게, 강조 표시·밑줄 자리만큼 여유를 둬요. */
+.fit-welcome__title > span {
+  margin: -14px -16px -8px;
+  padding: 14px 16px 8px;
 }
 
 .fit-welcome__title em {
