@@ -13,6 +13,7 @@ import { loadTimetable } from '../timetable.js'
 import { getUnavailableSegments, loadUnavailablePeriods } from '../workoutAvailability.js'
 import { addDays, dateKey, formatKoreanTime, weekdays, weekRange } from '../workoutPlan.js'
 import './SchedulePage.css'
+import BrandMark from '../components/BrandMark.jsx'
 
 const initialForm = { title: '', date: '', startTime: '', endTime: '' }
 const dateLabel = new Intl.DateTimeFormat('ko-KR', { month: 'long', day: 'numeric', weekday: 'long' })
@@ -299,6 +300,7 @@ export default function SchedulePage() {
 
   return (
     <div className="fit-calendar">
+      <BrandMark />
       <h1 className="fit-calendar__sr-only">캘린더</h1>
       <MonthCalendar
         month={month}

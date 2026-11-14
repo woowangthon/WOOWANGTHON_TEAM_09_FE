@@ -6,6 +6,7 @@ import { getToken } from '../api/client.js'
 import { departments, findCollege } from '../campus.js'
 import './SignupPage.css'
 import './LoginPage.css'
+import BrandMark from '../components/BrandMark.jsx'
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -69,6 +70,7 @@ export default function LoginPage() {
 
   return (
     <div className="fit-setup">
+      <BrandMark />
       <form className="fit-setup__screen fit-login" onSubmit={submit} noValidate>
         <p className="fit-login__brand">우왕코치</p>
         <h1>{isJoin ? '회원가입' : '로그인'}</h1>

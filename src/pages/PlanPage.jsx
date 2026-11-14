@@ -4,6 +4,7 @@ import { clearUpcomingWorkouts, loadWeek } from '../api/plan.js'
 import { useAsync } from '../hooks/useAsync.js'
 import { formatKoreanTime, parseDateKey } from '../workoutPlan.js'
 import './PlanPage.css'
+import BrandMark from '../components/BrandMark.jsx'
 
 export default function PlanPage() {
   const navigate = useNavigate()
@@ -40,6 +41,7 @@ export default function PlanPage() {
 
   return (
     <div className="fit-plan">
+      <BrandMark />
       <Link className="fit-plan__back" to="/">‹ 뒤로</Link>
 
       <header className="fit-plan__header">

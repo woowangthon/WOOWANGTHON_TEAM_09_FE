@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router'
 import SetupProgress from '../components/SetupProgress.jsx'
 import './SignupPage.css'
 import './CalendarConnectPage.css'
+import BrandMark from '../components/BrandMark.jsx'
 
 export default function CalendarConnectPage() {
   const navigate = useNavigate()
@@ -12,6 +13,7 @@ export default function CalendarConnectPage() {
 
   return (
     <div className="fit-setup">
+      <BrandMark />
       {fromProfile ? (
         <div className="fit-setup__top">
           <span>캘린더 연결</span>

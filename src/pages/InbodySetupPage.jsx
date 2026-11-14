@@ -8,6 +8,7 @@ import { loadInbody, saveInbody, todayText } from '../inbody.js'
 import { readStorage } from '../workoutPlan.js'
 import './SignupPage.css'
 import './UploadSetup.css'
+import BrandMark from '../components/BrandMark.jsx'
 
 const missingLabels = { height: '키', weight: '몸무게', body_fat_percent: '체지방률', skeletal_muscle_kg: '골격근량', inbody_measured_at: '측정일' }
 
@@ -119,6 +120,7 @@ export default function InbodySetupPage() {
 
   return (
     <div className="fit-setup">
+      <BrandMark />
       {fromProfile ? (
         <div className="fit-setup__top">
           <span>인바디 정보 관리</span>

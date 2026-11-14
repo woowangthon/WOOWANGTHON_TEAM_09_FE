@@ -8,6 +8,7 @@ import { loadInbody } from '../inbody.js'
 import { loadTimetable } from '../timetable.js'
 import { daysText, getUnavailablePeriod, getUnavailablePeriods } from '../workoutAvailability.js'
 import './ProfilePage.css'
+import BrandMark from '../components/BrandMark.jsx'
 
 const goalLabels = {
   muscle: '근력 향상',
@@ -103,6 +104,7 @@ export default function ProfilePage() {
   if (!profile && loading && !me) {
     return (
       <div className="fit-profile">
+      <BrandMark />
         <p className="fit-profile__loading" role="status">내 정보를 불러오는 중이에요...</p>
         <FitNavigation />
       </div>
@@ -112,6 +114,7 @@ export default function ProfilePage() {
   if (!profile) {
     return (
       <div className="fit-profile">
+      <BrandMark />
         <section className="fit-profile__card fit-profile__hero">
           <span className="fit-profile__avatar" aria-hidden="true" />
           <div>
@@ -128,6 +131,7 @@ export default function ProfilePage() {
 
   return (
     <div className="fit-profile">
+      <BrandMark />
       <section className="fit-profile__card fit-profile__hero">
         <span className="fit-profile__avatar" aria-hidden="true">
           <svg viewBox="0 0 24 24"><circle cx="12" cy="9" r="4.2" /><path d="M4 21a8 8 0 0 1 16 0z" /></svg>

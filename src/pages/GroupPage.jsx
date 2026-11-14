@@ -5,6 +5,7 @@ import GroupHeader from '../components/GroupHeader.jsx'
 import { exploreGroups, loadMyGroups } from '../groups.js'
 import { useAsync } from '../hooks/useAsync.js'
 import './CampusPage.css'
+import BrandMark from '../components/BrandMark.jsx'
 
 const tabs = [
   { id: 'mine', label: '내 그룹' },
@@ -105,6 +106,7 @@ export default function GroupPage() {
 
   return (
     <div className="fit-campus">
+      <BrandMark />
       <GroupHeader back="/campus" subtitle="그룹 관리" />
 
       <div className="fit-campus__tabs" role="tablist" aria-label="보기 선택">

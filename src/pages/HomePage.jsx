@@ -10,6 +10,7 @@ import { getBusyPeriods, getFreeSlots, toTime } from '../freeTime.js'
 import { useAsync } from '../hooks/useAsync.js'
 import { addDays, dateKey, formatKoreanTime, readStorage } from '../workoutPlan.js'
 import './HomePage.css'
+import BrandMark from '../components/BrandMark.jsx'
 
 const dateFormat = new Intl.DateTimeFormat('ko-KR', { month: 'long', day: 'numeric', weekday: 'long' })
 
@@ -148,6 +149,7 @@ export default function HomePage() {
 
   return (
     <div className="fit-home">
+      <BrandMark />
       <header className="fit-home__header">
         <p>{dateFormat.format(today)}</p>
         <h1>

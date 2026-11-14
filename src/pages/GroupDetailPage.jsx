@@ -6,6 +6,7 @@ import GroupIcon from '../components/GroupIcon.jsx'
 import { joinGroup, leaveGroup, loadGroup } from '../groups.js'
 import { useAsync } from '../hooks/useAsync.js'
 import './CampusPage.css'
+import BrandMark from '../components/BrandMark.jsx'
 
 const rateText = (rate) => (rate === null || rate === undefined ? '-' : `${Math.round(rate)}%`)
 
@@ -37,6 +38,7 @@ export default function GroupDetailPage() {
 
   return (
     <div className="fit-campus">
+      <BrandMark />
       <GroupHeader back="/campus/groups" subtitle="그룹 상세" />
 
       {loading && !group && (

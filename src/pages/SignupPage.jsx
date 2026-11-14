@@ -8,6 +8,7 @@ import { savePrefs } from '../userPrefs.js'
 import UnavailablePicker from '../components/UnavailablePicker.jsx'
 import { getUnavailablePeriod, getUnavailablePeriods } from '../workoutAvailability.js'
 import './SignupPage.css'
+import BrandMark from '../components/BrandMark.jsx'
 
 const goals = ['muscle', 'fat', 'fitness', 'unsure', 'general']
 const experiences = ['beginner', 'intermediate', 'advanced']
@@ -225,13 +226,21 @@ export default function SignupPage() {
 
   return (
     <div className="fit-setup">
+      <BrandMark />
       {step > 0 && !editStep && <SetupProgress step={progressByStep[step]} />}
 
       {step === 0 && (
         <div className="fit-setup__screen fit-setup__screen--welcome">
-          {heading(['안녕하세요'])}
+          <h1 ref={headingRef} tabIndex={-1} className="fit-welcome__title">
+            <span>바쁜 하루에도</span>
+            <span>운동은 <em>꾸준하게<svg className="fit-welcome__spark" viewBox="0 0 14 16" aria-hidden="true"><path d="M3 1 5 10M10 3 9 12" /></svg></em></span>
+          </h1>
+          <div className="fit-welcome__hero">
+            {/* 캐릭터 이미지: public/brand/mascot.png (없으면 빈자리로 둬요) */}
+            <img src="/brand/mascot.png" alt="" onError={(event) => { event.currentTarget.hidden = true }} />
+          </div>
           <div className="fit-setup__options">
-            <button className="fit-setup__choice" type="button" onClick={() => goTo(1)}>시작하기</button>
+            <button className="fit-setup__choice" type="button" onClick={() => goTo(1)}>우왕코치 시작하기 →</button>
           </div>
         </div>
       )}

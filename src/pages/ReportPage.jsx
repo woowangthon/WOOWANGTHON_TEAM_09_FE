@@ -8,6 +8,7 @@ import { useAsync } from '../hooks/useAsync.js'
 import { useCountUp } from '../hooks/useCountUp.js'
 import { addDays, dateKey, formatKoreanTime, weekRange } from '../workoutPlan.js'
 import './ReportPage.css'
+import BrandMark from '../components/BrandMark.jsx'
 
 const dateFormat = new Intl.DateTimeFormat('ko-KR', { month: 'long', day: 'numeric', weekday: 'long' })
 
@@ -49,6 +50,7 @@ export default function ReportPage() {
 
   return (
     <div className="fit-report">
+      <BrandMark />
       <header className="fit-report__header">
         <p>{dateFormat.format(today)}</p>
         <h1>이번 주도 수고했어요</h1>

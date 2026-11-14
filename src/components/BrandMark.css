@@ -1,0 +1,18 @@
+.fit-brand {
+  display: flex;
+  align-self: flex-start;
+  align-items: center;
+  gap: 5px;
+  width: fit-content;
+  margin: 0 0 8px;
+  color: #fafafa;
+  font: 700 12px/1 var(--sans);
+  letter-spacing: -0.02em;
+  text-align: left;
+}
+
+.fit-brand__icon {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}

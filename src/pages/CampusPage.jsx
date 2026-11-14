@@ -4,6 +4,7 @@ import { loadCampus, loadDashboard } from '../campus.js'
 import FitNavigation from '../components/FitNavigation.jsx'
 import { useAsync } from '../hooks/useAsync.js'
 import './CampusPage.css'
+import BrandMark from '../components/BrandMark.jsx'
 
 const tabs = [
   { id: 'mine', label: '내 단과대' },
@@ -99,6 +100,7 @@ export default function CampusPage() {
 
   return (
     <div className="fit-campus">
+      <BrandMark />
       <header className="fit-campus__header">
         <div>
           <p>충북대학교 캠퍼스 운동 현황</p>

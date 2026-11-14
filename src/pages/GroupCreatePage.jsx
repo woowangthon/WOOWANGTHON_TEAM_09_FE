@@ -5,6 +5,7 @@ import GroupHeader from '../components/GroupHeader.jsx'
 import { createGroup } from '../groups.js'
 import { imageAccept } from '../hooks/useImageFile.js'
 import './CampusPage.css'
+import BrandMark from '../components/BrandMark.jsx'
 
 const MAX_IMAGE = 1024 * 1024
 
@@ -56,6 +57,7 @@ export default function GroupCreatePage() {
 
   return (
     <div className="fit-campus">
+      <BrandMark />
       <GroupHeader back="/campus/groups" subtitle="그룹 만들기" />
 
       <form className="fit-group__form" onSubmit={submit}>

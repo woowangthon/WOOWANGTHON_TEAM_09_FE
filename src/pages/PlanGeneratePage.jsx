@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router'
 import { generatePlan, loadGoalText, loadWeek } from '../api/plan.js'
 import { dateKey, parseDateKey } from '../workoutPlan.js'
 import './PlanGeneratePage.css'
+import BrandMark from '../components/BrandMark.jsx'
 
 const steps = [
   { title: '운동 목표와 경험을 확인하는중', detail: '입력한 정보를 바탕으로 분석하고 있어요' },
@@ -59,6 +60,7 @@ export default function PlanGeneratePage() {
   if (error) {
     return (
       <div className="fit-generate">
+      <BrandMark />
         <h1>계획을 만들지<br />못했어요</h1>
         <p className="fit-generate__sub" role="alert">{error.message}</p>
         <div className="fit-generate__actions">
@@ -80,6 +82,7 @@ export default function PlanGeneratePage() {
 
   return (
     <div className="fit-generate">
+      <BrandMark />
       <h1>맞춤 운동 계획을<br />생성하고 있어요</h1>
       <p className="fit-generate__sub">목표와 운동 경험, 캘린더를 확인하고 있어요</p>
 

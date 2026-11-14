@@ -10,6 +10,7 @@ import { getTimetableClass, loadTimetable } from '../timetable.js'
 import { weekdays } from '../workoutPlan.js'
 import './SignupPage.css'
 import './UploadSetup.css'
+import BrandMark from '../components/BrandMark.jsx'
 
 const initialForm = { title: '', weekday: '1', startTime: '', endTime: '' }
 
@@ -99,6 +100,7 @@ export default function TimetablePage() {
 
   return (
     <div className="fit-setup">
+      <BrandMark />
       {fromProfile ? (
         <div className="fit-setup__top">
           <span>수업 시간표 관리</span>

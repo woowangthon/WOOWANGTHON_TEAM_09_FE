@@ -4,6 +4,7 @@ import ExerciseIcon from '../components/ExerciseIcon.jsx'
 import { useAsync } from '../hooks/useAsync.js'
 import { readStorage } from '../workoutPlan.js'
 import './PlanPage.css'
+import BrandMark from '../components/BrandMark.jsx'
 
 const levelLabels = {
   beginner: '초보자 루틴',
@@ -26,6 +27,7 @@ export default function PlanDetailPage() {
 
   return (
     <div className="fit-plan">
+      <BrandMark />
       <button className="fit-plan__back" type="button" onClick={goBack}>‹ 뒤로</button>
 
       {loading && <p className="fit-plan__state" role="status">운동을 불러오는 중이에요...</p>}

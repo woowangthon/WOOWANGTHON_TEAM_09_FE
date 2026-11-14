@@ -51,7 +51,8 @@
 }
 
 .fit-setup__screen--welcome {
-  padding-top: clamp(120px, 26vh, 220px);
+  align-items: stretch;
+  padding-top: clamp(40px, 9vh, 80px);
 }
 
 .fit-setup__screen--top {
@@ -83,7 +84,58 @@
 }
 
 .fit-setup__screen--welcome .fit-setup__options {
-  margin-top: clamp(120px, 24vh, 200px);
+  width: min(100%, 300px);
+  margin: 36px auto 0;
+}
+
+/* 시작 화면: 왼쪽 정렬 큰 제목 + '꾸준하게' 밑줄 */
+.fit-setup .fit-welcome__title {
+  text-align: left;
+  font-size: clamp(30px, 9vw, 36px);
+  line-height: 1.35;
+}
+
+.fit-welcome__title em {
+  position: relative;
+  font-style: normal;
+}
+
+.fit-welcome__title em::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: -4px;
+  left: 0;
+  height: 4px;
+  border-radius: 4px;
+  background: var(--setup-berry);
+  transform: rotate(-1.5deg);
+}
+
+.fit-welcome__spark {
+  position: absolute;
+  top: -14px;
+  right: -12px;
+  width: 14px;
+  height: 16px;
+  fill: none;
+  stroke: var(--setup-berry);
+  stroke-linecap: round;
+  stroke-width: 2.4;
+}
+
+/* 캐릭터 + 뒤쪽 은은한 붉은 빛 */
+.fit-welcome__hero {
+  display: grid;
+  place-items: center;
+  min-height: 260px;
+  margin-top: 40px;
+  background: radial-gradient(closest-side, rgb(184 36 90 / 0.28), transparent);
+}
+
+.fit-welcome__hero img {
+  width: min(62%, 220px);
+  height: auto;
 }
 
 .fit-setup__screen--top .fit-setup__options {
